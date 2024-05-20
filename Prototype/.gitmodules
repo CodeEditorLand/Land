@@ -1,0 +1,7 @@
+[submodule "Log"]
+path = Log
+url = ssh://git@github.com/CodeEditorLand/Log.git
+
+[submodule "Interface"]
+path = Interface
+url = ssh://git@github.com/CodeEditorLand/Interface.git

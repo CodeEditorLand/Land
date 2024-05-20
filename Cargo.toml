@@ -1,0 +1,13 @@
+[workspace]
+members = []
+resolver = "2"
+
+[workspace.package]
+authors = ["Nikola Hristov"]
+documentation = "https://Documentation.Editor.Land/"
+edition = "2021"
+homepage = "https://Editor.Land/"
+license-file = "LICENSE"
+publish = false
+readme = "README.md"
+repository = "https://github.com/CodeEditorLand/Moon"

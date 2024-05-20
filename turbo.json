@@ -1,0 +1,17 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"pipeline": {
+		"Document": {
+			"dependsOn": ["^Document"],
+			"outputs": ["Documentation/**"]
+		},
+		"Start": {
+			"cache": false,
+			"dependsOn": ["^Start"]
+		},
+		"prepublishOnly": {
+			"dependsOn": ["^prepublishOnly"],
+			"outputs": ["Target/**"]
+		}
+	}
+}

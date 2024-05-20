@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"emitDeclarationOnly": false,
+		"noEmit": true
+	},
+	"exclude": ["**/node_modules/**", "**/Target/**"],
+	"include": ["./Prototype/", "./NPM/"],
+	"watchOptions": {
+		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
+	},
+	"extends": "@playform/build/tsconfig"
+}

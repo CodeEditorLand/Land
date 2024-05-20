@@ -1,0 +1,3 @@
+[submodule "Prototype"]
+path = Prototype
+url = ssh://git@github.com/CodeEditorLand/Prototype.git
