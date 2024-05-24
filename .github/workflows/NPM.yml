@@ -33,11 +33,18 @@ jobs:
 
             - run: npm install -g npm
 
+            - name: Publish ./Prototype/Interface
+              continue-on-error: true
+              working-directory: ./Prototype/Interface
+              run: |
+                  npm publish --legacy-peer-deps --provenance --ignore-scripts
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
             - name: Publish .
               continue-on-error: true
               working-directory: .
               run: |
-                  npm install --include prod dev optional peer --legacy-peer-deps
-                  npm publish --legacy-peer-deps --provenance
+                  npm publish --legacy-peer-deps --provenance --ignore-scripts
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
