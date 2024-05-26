@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
 	"name": "interface",
 	"version": "0.0.0",
 	"description": "",
@@ -23,4 +24,30 @@
 		"vite": "5.2.11",
 		"vite-plugin-solid": "2.10.2"
 	}
+=======
+	"name": "interface",
+	"version": "0.0.0",
+	"description": "",
+	"type": "module",
+	"scripts": {
+		"start": "vite",
+		"dev": "vite",
+		"build": "vite build",
+		"serve": "vite preview",
+		"tauri": "tauri"
+	},
+	"license": "MIT",
+	"dependencies": {
+		"solid-js": "1.8.17",
+		"@tauri-apps/api": ">=2.0.0-beta.12",
+		"@tauri-apps/plugin-shell": ">=2.0.0-beta.4"
+	},
+	"devDependencies": {
+		"typescript": "5.4.5",
+		"vite": "5.2.11",
+		"vite-plugin-solid": "2.10.2",
+		"@tauri-apps/cli": ">=2.0.0-beta.18",
+		"internal-ip": "8.0.0"
+	}
+>>>>>>> f3a1695967955f3725fdac82587658705e5da4ca
 }
