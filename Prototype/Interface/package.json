@@ -14,7 +14,7 @@
 	"dependencies": {
 		"solid-js": "1.8.17",
 		"@tauri-apps/api": ">=2.0.0-beta.13",
-		"@tauri-apps/plugin-shell": ">=2.0.0-beta.4"
+		"@tauri-apps/plugin-shell": ">=2.0.0-beta.6"
 	},
 	"devDependencies": {
 		"typescript": "5.4.5",
