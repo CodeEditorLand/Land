@@ -46,7 +46,11 @@
 		"prettier-plugin-sort-imports": "1.8.5",
 		"prettier-plugin-sql": "0.18.0",
 		"prettier-plugin-svelte": "3.2.3",
+<<<<<<< HEAD
 		"prettier-plugin-tailwindcss": "0.6.0",
+=======
+		"prettier-plugin-tailwindcss": "0.6.1",
+>>>>>>> 91cc6de288c2c4295223691fbfda326d530a5e1d
 		"prettier-plugin-toml": "2.0.1",
 		"tailwindcss": "3.4.3",
 		"turbo": "1.13.3"
