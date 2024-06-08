@@ -22,7 +22,7 @@
 		"prepublishOnly": "turbo run prepublishOnly"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "1.7.3",
+		"@biomejs/biome": "1.8.0",
 		"@commonalityco/studio": "0.2.57",
 		"@playform/build": "0.0.10",
 		"@playform/document": "0.0.10",
@@ -34,7 +34,7 @@
 		"@tailwindcss/typography": "0.5.13",
 		"@trivago/prettier-plugin-sort-imports": "4.3.0",
 		"commonality": "0.2.63",
-		"prettier": "3.3.0",
+		"prettier": "3.3.1",
 		"prettier-plugin-astro": "0.14.0",
 		"prettier-plugin-autocorrect": "0.4.1",
 		"prettier-plugin-java": "2.6.0",
@@ -45,11 +45,11 @@
 		"prettier-plugin-sh": "0.14.0",
 		"prettier-plugin-sort-imports": "1.8.5",
 		"prettier-plugin-sql": "0.18.0",
-		"prettier-plugin-svelte": "3.2.3",
-		"prettier-plugin-tailwindcss": "0.6.1",
+		"prettier-plugin-svelte": "3.2.4",
+		"prettier-plugin-tailwindcss": "0.6.2",
 		"prettier-plugin-toml": "2.0.1",
-		"tailwindcss": "3.4.3",
-		"turbo": "1.13.3"
+		"tailwindcss": "3.4.4",
+		"turbo": "2.0.3"
 	},
 	"publishConfig": {
 		"access": "public"
