@@ -14,18 +14,6 @@ updates:
       versioning-strategy: lockfile-only
 
     - package-ecosystem: "npm"
-      directory: "/Prototype/Interface"
-      schedule:
-          interval: "daily"
-      versioning-strategy: increase
-
-    - package-ecosystem: "cargo"
-      directory: "/Prototype/Interface/src-tauri"
-      schedule:
-          interval: "daily"
-      versioning-strategy: lockfile-only
-
-    - package-ecosystem: "npm"
       directory: "/"
       schedule:
           interval: "daily"

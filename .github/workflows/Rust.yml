@@ -76,18 +76,3 @@ jobs:
               with:
                 command: build
                 args: --release --all-features --manifest-path ./Cargo.toml
-
-            - uses: actions/cache@v4.0.2
-              with:
-                  path: |
-                      ~/.cargo/bin/
-                      ~/.cargo/registry/index/
-                      ~/.cargo/registry/cache/
-                      ~/.cargo/git/db/
-                      target/
-                      Target/
-                  key: ${{ runner.os }}-cargo-${{ hashFiles('./Prototype/Interface/src-tauri/Cargo.toml') }}
-            - uses: actions-rs/cargo@v1.0.3
-              with:
-                command: build
-                args: --release --all-features --manifest-path ./Prototype/Interface/src-tauri/Cargo.toml
