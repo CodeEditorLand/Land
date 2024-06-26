@@ -1,3 +1,3 @@
-# 🌕 [Moon] —
+# 🏙️ [Sublet] —
 
-[Moon]: https://github.com/CodeEditorLand/Moon
+[Sublet]: https://github.com/CodeEditorLand/Sublet
