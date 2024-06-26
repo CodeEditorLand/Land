@@ -19,6 +19,7 @@
 	"type": "module",
 	"scripts": {
 		"Document": "turbo run Document",
+		"Start": "turbo run Start",
 		"prepublishOnly": "turbo run prepublishOnly"
 	},
 	"devDependencies": {
@@ -49,7 +50,8 @@
 		"prettier-plugin-tailwindcss": "0.6.5",
 		"prettier-plugin-toml": "2.0.1",
 		"tailwindcss": "3.4.4",
-		"turbo": "2.0.5"
+		"turbo": "2.0.6-canary.0",
+		"typescript": "5.5.2"
 	},
 	"publishConfig": {
 		"access": "public"
