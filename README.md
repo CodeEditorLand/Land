@@ -106,3 +106,7 @@ sequenceDiagram
 ```
 
 [Sublet]: https://github.com/CodeEditorLand/Sublet
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this integration.
