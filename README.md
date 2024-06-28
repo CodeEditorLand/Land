@@ -67,20 +67,12 @@ graph TD
                 G5[Source]
             end
         end
-
-        subgraph Log
-            H[Log Folder]
-            subgraph GitHub Configs
-                H1[GitHub Configs]
-            end
-        end
     end
 
     A --> D
     A --> E
     A --> F
     A --> G
-    A --> H
     D --> D3
     D --> D4
     D4 --> D5
@@ -90,7 +82,6 @@ graph TD
     G --> G3
     G --> G4
     G --> G5
-    H --> H1
 ```
 
 [Sublet]: https://github.com/CodeEditorLand/Sublet
