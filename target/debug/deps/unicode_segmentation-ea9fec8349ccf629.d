@@ -1,9 +1,0 @@
-D:\Developer\Application\CodeEditorLand\Sublet\target\debug\deps\libunicode_segmentation-ea9fec8349ccf629.rmeta: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\grapheme.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\sentence.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\word.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\tables.rs
-
-D:\Developer\Application\CodeEditorLand\Sublet\target\debug\deps\unicode_segmentation-ea9fec8349ccf629.d: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\grapheme.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\sentence.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\word.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\tables.rs
-
-D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\lib.rs:
-D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\grapheme.rs:
-D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\sentence.rs:
-D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\word.rs:
-D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\unicode-segmentation-1.11.0\src\tables.rs:
