@@ -14,10 +14,16 @@ Install the necessary dependencies using `PNPM`:
 pnpm install
 ```
 
-Build the Editor:
+Build the `Editor`:
 
 ```sh
-cargo tauri build
+pnpm run tauri build
+```
+
+Start the `Editor`:
+
+```sh
+pnpm run tauri dev
 ```
 
 ```mermaid
