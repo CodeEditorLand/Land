@@ -8,10 +8,10 @@ Clone the repository:
 git clone ssh://git@github.com/CodeEditorLand/Sublet.git --recurse-submodules --
 ```
 
-Using NPM:
+Install the necessary dependencies using `PNPM`:
 
 ```sh
-npx astro add @playform/compress
+pnpm install
 ```
 
 Build the Editor:
