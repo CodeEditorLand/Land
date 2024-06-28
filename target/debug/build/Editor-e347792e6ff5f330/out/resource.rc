@@ -1,21 +1,21 @@
 #pragma code_page(65001)
 1 VERSIONINFO
-FILEFLAGS 0x0
-FILEOS 0x40004
 PRODUCTVERSION 0, 0, 0, 0
-FILEVERSION 0, 0, 0, 0
 FILESUBTYPE 0x0
+FILEVERSION 0, 0, 0, 0
 FILETYPE 0x1
 FILEFLAGSMASK 0x3f
+FILEFLAGS 0x0
+FILEOS 0x40004
 {
 BLOCK "StringFileInfo"
 {
 BLOCK "000004b0"
 {
-VALUE "ProductVersion", "0.0.0"
-VALUE "FileVersion", "0.0.0"
 VALUE "FileDescription", "Editor"
+VALUE "FileVersion", "0.0.0"
 VALUE "ProductName", "Editor"
+VALUE "ProductVersion", "0.0.0"
 }
 }
 BLOCK "VarFileInfo" {

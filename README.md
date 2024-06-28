@@ -44,10 +44,6 @@ graph TD
             end
         end
 
-        subgraph Tauri App
-            E[src-tauri]
-        end
-
         subgraph Water
             F[TypeScript Files: Water]
             subgraph Source
@@ -56,7 +52,7 @@ graph TD
         end
 
         subgraph Produce
-            G[Produce Folder]
+            G[Tauri]
             subgraph Gen
                 G3[Gen]
             end
@@ -70,7 +66,6 @@ graph TD
     end
 
     A --> D
-    A --> E
     A --> F
     A --> G
     D --> D3
