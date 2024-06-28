@@ -1,0 +1,8 @@
+cargo:rerun-if-changed=permissions
+cargo:PERMISSION_FILES_PATH=D:\Developer\Application\CodeEditorLand\Sublet\target\debug\build\tauri-plugin-shell-a565895fb1930e60\out\tauri-plugin-shell-permission-files
+cargo:GLOBAL_SCOPE_SCHEMA_PATH=D:\Developer\Application\CodeEditorLand\Sublet\target\debug\build\tauri-plugin-shell-a565895fb1930e60\out\global-scope.json
+cargo:GLOBAL_API_SCRIPT_PATH=\\?\D:\Tool\cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\tauri-plugin-shell-2.0.0-beta.7\api-iife.js
+cargo:rustc-check-cfg=cfg(mobile)
+cargo:rustc-check-cfg=cfg(desktop)
+cargo:rustc-cfg=desktop
+cargo:rustc-cfg=desktop
