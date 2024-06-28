@@ -84,4 +84,25 @@ graph TD
     G --> G5
 ```
 
+```mermaid
+sequenceDiagram
+    participant User
+    participant GitHub
+    participant PNPM
+    participant Cargo
+
+    User->>GitHub: Clone repository
+    Note right of GitHub: git clone ssh://git@github.com/CodeEditorLand/Sublet.git --depth=1 --recurse-submodules --shallow-submodules
+
+    User->>PNPM: Install dependencies
+    Note right of PNPM: pnpm install
+
+    User->>Cargo: Build the Editor
+    Note right of Cargo: cargo tauri build
+
+    Note over Cargo: Water is nested into Seed
+    Note over Cargo: Seed is nested into Produce
+    Note over Cargo: Produce creates the final binary
+```
+
 [Sublet]: https://github.com/CodeEditorLand/Sublet
