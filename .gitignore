@@ -1,6 +1,9 @@
-# /target/*
-# !/target/release
-# /target/release/*
-# !/target/release/bundle/nsis/*.exe
-# !/target/release/bundle/msi/*.msi
-# !/target/release/*.exe
+/target/*
+!/target/release
+/target/release/*
+!/target/release/bundle
+!/target/release/bundle/nsis
+!/target/release/bundle/msi
+!/target/release/bundle/nsis/*.exe
+!/target/release/bundle/msi/*.msi
+!/target/release/*.exe
