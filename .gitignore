@@ -1,32 +1,3 @@
-# dependencies
-.pnp
-.pnp.js
-
-# testing
-coverage
-
-# next.js
-.next/
-out/
-# build
-
-# misc
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# local env files
-.dev.vars
-
-# turbo
-
-.pnpm-store
-
-# Added by cargo
-
 # /target/*
 # !/target/release
 # /target/release/*
