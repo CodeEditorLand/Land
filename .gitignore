@@ -1,6 +1,6 @@
-/target/*
-!/target/release
-/target/release/*
-!/target/release/*.deb
-!/target/release/*.exe
-!/target/release/Editor
+# /target/*
+# !/target/release
+# /target/release/*
+# !/target/release/bundle/nsis/*.exe
+# !/target/release/bundle/msi/*.msi
+# !/target/release/*.exe
