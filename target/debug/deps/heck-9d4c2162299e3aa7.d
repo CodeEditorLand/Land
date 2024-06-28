@@ -1,0 +1,13 @@
+D:\Developer\Application\CodeEditorLand\Sublet\target\debug\deps\libheck-9d4c2162299e3aa7.rmeta: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\kebab.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\lower_camel.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\shouty_kebab.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\shouty_snake.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\snake.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\title.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\train.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\upper_camel.rs
+
+D:\Developer\Application\CodeEditorLand\Sublet\target\debug\deps\heck-9d4c2162299e3aa7.d: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\kebab.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\lower_camel.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\shouty_kebab.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\shouty_snake.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\snake.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\title.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\train.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\upper_camel.rs
+
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\lib.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\kebab.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\lower_camel.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\shouty_kebab.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\shouty_snake.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\snake.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\title.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\train.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\heck-0.5.0\src\upper_camel.rs:

@@ -1,0 +1,43 @@
+#pragma code_page(65001)
+1 VERSIONINFO
+FILEFLAGS 0x0
+FILEFLAGSMASK 0x3f
+FILEOS 0x40004
+FILETYPE 0x1
+PRODUCTVERSION 0, 0, 0, 0
+FILEVERSION 0, 0, 0, 0
+FILESUBTYPE 0x0
+{
+BLOCK "StringFileInfo"
+{
+BLOCK "000004b0"
+{
+VALUE "ProductName", "editor"
+VALUE "FileVersion", "0.0.0"
+VALUE "ProductVersion", "0.0.0"
+VALUE "FileDescription", "Editor"
+}
+}
+BLOCK "VarFileInfo" {
+VALUE "Translation", 0x0, 0x04b0
+}
+}
+32512 ICON "\\\\?\\D:\\Developer\\Application\\CodeEditorLand\\Sublet\\Project\\Produce\\icons\\icon.ico"
+1 24
+{
+" <assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0""> "
+" <dependency> "
+" <dependentAssembly> "
+" <assemblyIdentity "
+" type=""win32"" "
+" name=""Microsoft.Windows.Common-Controls"" "
+" version=""6.0.0.0"" "
+" processorArchitecture=""*"" "
+" publicKeyToken=""6595b64144ccf1df"" "
+" language=""*"" "
+" /> "
+" </dependentAssembly> "
+" </dependency> "
+" </assembly> "
+}
+

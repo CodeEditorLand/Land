@@ -1,0 +1,12 @@
+D:\Developer\Application\CodeEditorLand\Sublet\target\debug\deps\libico-f28768a63c28bd9a.rmeta: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\macros.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\bmpdepth.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\icondir.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\image.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\restype.rs
+
+D:\Developer\Application\CodeEditorLand\Sublet\target\debug\deps\libico-f28768a63c28bd9a.rlib: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\macros.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\bmpdepth.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\icondir.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\image.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\restype.rs
+
+D:\Developer\Application\CodeEditorLand\Sublet\target\debug\deps\ico-f28768a63c28bd9a.d: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\macros.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\bmpdepth.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\icondir.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\image.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\restype.rs
+
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\lib.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\macros.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\bmpdepth.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\icondir.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\image.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ico-0.3.0\src\restype.rs:
