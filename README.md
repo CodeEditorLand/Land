@@ -5,7 +5,7 @@
 Clone the repository:
 
 ```sh
-git clone ssh://git@github.com/CodeEditorLand/Sublet.git --recurse-submodules --
+git clone ssh://git@github.com/CodeEditorLand/Sublet.git --depth=1 --recurse-submodules --shallow-submodules
 ```
 
 Install the necessary dependencies using `PNPM`:
