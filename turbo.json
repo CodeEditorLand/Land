@@ -10,5 +10,6 @@
 			"outputs": ["Target/**"]
 		}
 	},
-	"ui": "stream"
+	"ui": "stream",
+	"extends": ["//"]
 }
