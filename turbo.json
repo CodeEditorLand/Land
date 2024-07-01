@@ -3,17 +3,11 @@
 	"tasks": {
 		"Start": {
 			"cache": false,
-			"dependsOn": [
-				"^Start"
-			]
+			"dependsOn": ["^prepublishOnly", "^Start"]
 		},
 		"prepublishOnly": {
-			"dependsOn": [
-				"^prepublishOnly"
-			],
-			"outputs": [
-				"Target/**"
-			]
+			"dependsOn": ["^prepublishOnly"],
+			"outputs": ["Target/**"]
 		}
 	},
 	"ui": "stream"
