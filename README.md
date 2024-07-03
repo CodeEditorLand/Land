@@ -31,8 +31,8 @@ graph TD
     A[Top Repo: EcoSystem]
 
     subgraph Project
-        subgraph Seed
-            D[Astro Website: Seed]
+        subgraph Sky
+            D[Astro Website: Sky]
             subgraph Public
                 D3[Public]
             end
@@ -50,14 +50,14 @@ graph TD
             end
         end
 
-        subgraph Water
-            F[TypeScript Files: Water]
+        subgraph Wind
+            F[TypeScript Files: Wind]
             subgraph Source
                 F3[Source]
             end
         end
 
-        subgraph Produce
+        subgraph Mountain
             G[Tauri]
             subgraph Gen
                 G3[Gen]
@@ -101,9 +101,9 @@ sequenceDiagram
     User->>Cargo: Build the Editor
     Note right of Cargo: cargo tauri build
 
-    Note over Cargo: Water is nested into Seed
-    Note over Cargo: Seed is nested into Produce
-    Note over Cargo: Produce creates the final binary
+    Note over Cargo: Wind is nested into Sky
+    Note over Cargo: Sky is nested into Mountain
+    Note over Cargo: Mountain creates the final binary
 ```
 
 [EcoSystem]: https://github.com/CodeEditorLand/EcoSystem
