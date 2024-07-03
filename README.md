@@ -1,11 +1,11 @@
-# 🏙️ [Sublet] —
+# 🌿 [EcoSystem] —
 
 ## Installation
 
 Clone the repository:
 
 ```sh
-git clone ssh://git@github.com/CodeEditorLand/Sublet.git --depth=1 --recurse-submodules --shallow-submodules
+git clone ssh://git@github.com/CodeEditorLand/EcoSystem.git --depth=1 --recurse-submodules --shallow-submodules
 ```
 
 Install the necessary dependencies using `PNPM`:
@@ -28,7 +28,7 @@ pnpm run tauri dev
 
 ```mermaid
 graph TD
-    A[Top Repo: Sublet]
+    A[Top Repo: EcoSystem]
 
     subgraph Project
         subgraph Seed
@@ -93,7 +93,7 @@ sequenceDiagram
     participant Cargo
 
     User->>GitHub: Clone repository
-    Note right of GitHub: git clone ssh://git@github.com/CodeEditorLand/Sublet.git --depth=1 --recurse-submodules --shallow-submodules
+    Note right of GitHub: git clone ssh://git@github.com/CodeEditorLand/EcoSystem.git --depth=1 --recurse-submodules --shallow-submodules
 
     User->>PNPM: Install dependencies
     Note right of PNPM: pnpm install
@@ -106,7 +106,7 @@ sequenceDiagram
     Note over Cargo: Produce creates the final binary
 ```
 
-[Sublet]: https://github.com/CodeEditorLand/Sublet
+[EcoSystem]: https://github.com/CodeEditorLand/EcoSystem
 
 ## Changelog
 
