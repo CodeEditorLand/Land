@@ -14,13 +14,13 @@ Install the necessary dependencies using `PNPM`:
 pnpm install
 ```
 
-Build the `Editor`:
+Build the `EcoSystem`:
 
 ```sh
 pnpm run tauri build
 ```
 
-Start the `Editor`:
+Run the `EcoSystem`:
 
 ```sh
 pnpm run tauri dev
