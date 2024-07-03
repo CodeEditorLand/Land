@@ -1,14 +1,15 @@
 {
-	"name": "@codeeditorland/sublet",
+	"name": "@codeeditorland/ecosystem",
 	"version": "0.0.0",
 	"private": false,
-	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Sublet#readme",
+	"description": "🌿 EcoSystem —",
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/EcoSystem#readme",
 	"bugs": {
-		"url": "HTTPS://GitHub.Com/CodeEditorLand/Sublet/issues"
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/EcoSystem/issues"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/CodeEditorLand/Sublet.git"
+		"url": "git+https://github.com/CodeEditorLand/EcoSystem.git"
 	},
 	"license": "SEE LICENSE IN LICENSE",
 	"author": {
@@ -36,7 +37,7 @@
 		"@tailwindcss/typography": "0.5.13",
 		"@tauri-apps/api": "2.0.0-beta.13",
 		"@tauri-apps/cli": "2.0.0-beta.20",
-		"@tauri-apps/plugin-shell": "2.0.0-beta.6",
+		"@tauri-apps/plugin-shell": "2.0.0-beta.7",
 		"@trivago/prettier-plugin-sort-imports": "4.3.0",
 		"commonality": "0.2.63",
 		"prettier": "3.3.2",

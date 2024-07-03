@@ -1,13 +1,13 @@
 [workspace]
-members = ["Project/Produce"]
+members = []
 resolver = "2"
 
 [workspace.package]
-authors = ["Nikola Hristov"]
+authors = ["🖋️ Source — 👐🏻 Open — <Source/Open@Editor.Land>"]
 documentation = "https://Documentation.Editor.Land"
 edition = "2021"
 homepage = "https://Editor.Land/"
 license-file = "LICENSE"
 publish = false
 readme = "README.md"
-repository = "https://github.com/CodeEditorLand/Moon"
+repository = "https://github.com/CodeEditorLand/EcoSystem"
