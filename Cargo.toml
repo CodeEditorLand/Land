@@ -1,5 +1,9 @@
 [workspace]
-members = ["Elements/Mountain"]
+members = [
+	"Elements/Mountain",
+	"Elements/River",
+	"Elements/Sun"
+]
 resolver = "2"
 
 [workspace.package]
