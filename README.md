@@ -30,7 +30,7 @@ pnpm run tauri dev
 graph TD
     A[Top Repo: EcoSystem]
 
-    subgraph Project
+    subgraph Elements
         subgraph Sky
             D[Astro Website: Sky]
             subgraph Public
