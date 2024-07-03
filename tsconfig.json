@@ -1,10 +1,12 @@
 {
 	"compilerOptions": {
 		"emitDeclarationOnly": false,
-		"noEmit": true
+		"noEmit": true,
+		"outDir": "Target",
+		"rootDir": "."
 	},
 	"exclude": ["**/node_modules/**", "**/Target/**"],
-	"include": ["./Prototype/", "./NPM/"],
+	"include": ["./Elements/"],
 	"watchOptions": {
 		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
 	},

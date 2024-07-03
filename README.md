@@ -8,7 +8,7 @@ Clone the repository:
 git clone ssh://git@github.com/CodeEditorLand/EcoSystem.git --depth=1 --recurse-submodules --shallow-submodules
 ```
 
-Install the necessary dependencies using `PNPM`:
+Install the necessary dependencies using `pnpm`:
 
 ```sh
 pnpm install
