@@ -1,5 +1,6 @@
 [workspace]
 members = [
+	"Elements/Echo",
 	"Elements/Mountain",
 	"Elements/River",
 	"Elements/Sun"
@@ -8,10 +9,10 @@ resolver = "2"
 
 [workspace.package]
 authors = ["🖋️ Source — 👐🏻 Open — <Source/Open@Editor.Land>"]
-documentation = "https://Documentation.Editor.Land"
+documentation = "HTTPS://Documentation.Editor.Land"
 edition = "2021"
-homepage = "https://Editor.Land/"
-license-file = "LICENSE"
+homepage = "HTTPS://Editor.Land/"
+license-file = "SEE LICENSE IN LICENSE"
 publish = false
 readme = "README.md"
-repository = "https://github.com/CodeEditorLand/EcoSystem"
+repository = "HTTPS://GitHub.Com/CodeEditorLand/EcoSystem"
