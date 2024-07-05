@@ -71,11 +71,26 @@ graph TD
                 G5[Source]
             end
         end
+
+        subgraph Sun
+            H[Writer of Files: Sun]
+        end
+
+        subgraph River
+            I[Reader of Files: River]
+        end
+
+        subgraph Echo
+            J[WebSocket Component: Echo]
+        end
     end
 
     A --> D
     A --> F
     A --> G
+    A --> H
+    A --> I
+    A --> J
     D --> D3
     D --> D4
     D4 --> D5
@@ -85,6 +100,11 @@ graph TD
     G --> G3
     G --> G4
     G --> G5
+    J --> G
+    J --> I
+    J --> H
+    J --> D
+    F --> D
 ```
 
 ```mermaid

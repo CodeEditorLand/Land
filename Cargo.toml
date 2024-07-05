@@ -2,7 +2,8 @@
 members = [
 	"Elements/Mountain",
 	"Elements/River",
-	"Elements/Sun"
+	"Elements/Sun",
+	"Testbed/TauriApp"
 ]
 resolver = "2"
 
