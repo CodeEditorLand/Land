@@ -8,6 +8,10 @@
 		"prepublishOnly": {
 			"dependsOn": ["^prepublishOnly"],
 			"outputs": ["Target/**"]
+		},
+		"tauri": {
+			"dependsOn": ["^tauri"],
+			"outputs": ["Target/**"]
 		}
 	},
 	"ui": "stream",
