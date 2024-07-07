@@ -4,12 +4,9 @@ target-dir = "Target"
 [cargo-new]
 vcs = "git"
 
-[profile.dev]
-opt-level = 3
-
 [profile.release]
+opt-level = 3
 codegen-units = 1
 debug = false
-inherits = "dev"
 lto = true
 panic = "abort"
