@@ -1,0 +1,11 @@
+D:\Developer\Application\CodeEditorLand\EcoSystem\Target2\debug\deps\libppv_lite86-340b0de6beaeed3f.rmeta: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\soft.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\types.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\x86_64\mod.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\x86_64\sse2.rs
+
+D:\Developer\Application\CodeEditorLand\EcoSystem\Target2\debug\deps\libppv_lite86-340b0de6beaeed3f.rlib: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\soft.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\types.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\x86_64\mod.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\x86_64\sse2.rs
+
+D:\Developer\Application\CodeEditorLand\EcoSystem\Target2\debug\deps\ppv_lite86-340b0de6beaeed3f.d: D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\lib.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\soft.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\types.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\x86_64\mod.rs D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\x86_64\sse2.rs
+
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\lib.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\soft.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\types.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\x86_64\mod.rs:
+D:\Tool\Cache\Rust\registry\src\index.crates.io-6f17d22bba15001f\ppv-lite86-0.2.17\src\x86_64\sse2.rs:
