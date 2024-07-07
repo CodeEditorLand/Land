@@ -28,6 +28,13 @@ Run the `EcoSystem`:
 pnpm run tauri dev
 ```
 
+## Usage
+
+First run the `Sun` binary then the `River` to startup the necessary websockets.
+Then run the Tauri app `Mountain`
+
+## Graph
+
 ```mermaid
 graph TD
     A[Top Repo: EcoSystem]
