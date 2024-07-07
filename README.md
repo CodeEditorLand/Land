@@ -34,6 +34,8 @@ First run the [`Sun`](./Target/release/Sun.exe) binary then the
 [`River`](./Target/release/River.exe) to startup the necessary websockets. Then
 run the Tauri app [`Mountain`](./Target/release/Mountain.exe)
 
+(./.github/EcoSystem)
+
 ## Graph
 
 ```mermaid
