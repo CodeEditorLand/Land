@@ -1,23 +1,23 @@
-/target/*
+./Target/*
 
-!/target/debug
+!./Target/debug
 
-!/target/release
+!./Target/release
 
-/target/debug/*
+./Target/debug/*
 
-/target/release/*
+./Target/release/*
 
-!/target/debug/bundle
-!/target/debug/bundle/nsis
-!/target/debug/bundle/msi
-!/target/debug/bundle/nsis/*.exe
-!/target/debug/bundle/msi/*.msi
-!/target/debug/*.exe
+!./Target/debug/bundle
+!./Target/debug/bundle/nsis
+!./Target/debug/bundle/msi
+!./Target/debug/bundle/nsis/*.exe
+!./Target/debug/bundle/msi/*.msi
+!./Target/debug/*.exe
 
-!/target/release/bundle
-!/target/release/bundle/nsis
-!/target/release/bundle/msi
-!/target/release/bundle/nsis/*.exe
-!/target/release/bundle/msi/*.msi
-!/target/release/*.exe
+!./Target/release/bundle
+!./Target/release/bundle/nsis
+!./Target/release/bundle/msi
+!./Target/release/bundle/nsis/*.exe
+!./Target/release/bundle/msi/*.msi
+!./Target/release/*.exe
