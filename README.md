@@ -100,8 +100,8 @@ sequenceDiagram
     User->>PNPM: Install dependencies
     Note right of PNPM: pnpm install
 
-    User->>Cargo: Build the Editor
-    Note right of Cargo: cargo tauri build
+    User->>Cargo: Build the Mountain
+    Note right of Cargo: cargo tauri build --release
 
     Note over Cargo: Wind is nested into Sky
     Note over Cargo: Sky is nested into Mountain
