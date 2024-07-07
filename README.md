@@ -28,14 +28,6 @@ Run the `EcoSystem`:
 pnpm run tauri dev
 ```
 
-## Usage
-
-First run the [`Sun`](./Target/release/Sun.exe) binary then the
-[`River`](./Target/release/River.exe) to startup the necessary websockets. Then
-run the Tauri app [`Mountain`](./Target/release/Mountain.exe)
-
-## Graph
-
 ```mermaid
 graph TD
     A[Top Repo: EcoSystem]
@@ -79,26 +71,11 @@ graph TD
                 G5[Source]
             end
         end
-
-        subgraph Sun
-            H[Writer of Files: Sun]
-        end
-
-        subgraph River
-            I[Reader of Files: River]
-        end
-
-        subgraph Echo
-            J[WebSocket Component: Echo]
-        end
     end
 
     A --> D
     A --> F
     A --> G
-    A --> H
-    A --> I
-    A --> J
     D --> D3
     D --> D4
     D4 --> D5
@@ -108,11 +85,6 @@ graph TD
     G --> G3
     G --> G4
     G --> G5
-    J --> G
-    J --> I
-    J --> H
-    J --> D
-    F --> D
 ```
 
 ```mermaid
