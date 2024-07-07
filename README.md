@@ -30,8 +30,8 @@ pnpm run tauri dev
 
 ## Usage
 
-First run the `Sun` binary then the `River` to startup the necessary websockets.
-Then run the Tauri app `Mountain`
+First run the (`Sun`)[./Target] binary then the `River` to startup the necessary
+websockets. Then run the Tauri app `Mountain`
 
 ## Graph
 

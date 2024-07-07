@@ -3,7 +3,7 @@ members = [
 	"Elements/Echo",
 	"Elements/Mountain",
 	"Elements/River",
-	"Elements/Sun"
+	"Elements/Sun",
 ]
 resolver = "2"
 

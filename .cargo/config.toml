@@ -1,2 +1,15 @@
 [build]
 target-dir = "Target"
+
+[cargo-new]
+vcs = "git"
+
+[profile.dev]
+opt-level = 3
+
+[profile.release]
+codegen-units = 1
+debug = false
+inherits = "dev"
+lto = true
+panic = "abort"
