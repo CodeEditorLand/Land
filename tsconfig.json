@@ -3,7 +3,8 @@
 		"emitDeclarationOnly": false,
 		"noEmit": true,
 		"outDir": "Target",
-		"rootDir": "."
+		"rootDir": ".",
+		"jsx": "preserve"
 	},
 	"exclude": ["**/node_modules/**", "**/Target/**"],
 	"include": ["./Elements/"],
