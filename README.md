@@ -19,24 +19,25 @@ pnpm install
 Build the `EcoSystem`:
 
 ```sh
+# Build TypeScript and package.json packages
+pnpm run prepublishOnly
+
+# Build Debug releases for cargo
+cargo build
+
+# Build Production releases for cargo
+cargo build --release
+
+# Build the Tauri application
 pnpm run tauri build
 ```
 
 Run the `EcoSystem`:
 
 ```sh
+# Runs the development version of the application
 pnpm run tauri dev
 ```
-
-## Usage
-
-First run the [`Sun`](./Target/release/Sun.exe) binary then the
-[`River`](./Target/release/River.exe) to startup the necessary websockets. Then
-run the Tauri app [`Mountain`](./Target/release/Mountain.exe)
-
-![EcoSystem](https://nikolahristov.tech/Image/GitHub/CodeEditorLand/EcoSystem/EcoSystem.svg)
-
-## Graph
 
 ```mermaid
 graph TD
@@ -111,7 +112,7 @@ sequenceDiagram
     Note right of PNPM: pnpm install
 
     User->>Cargo: Build the Mountain
-    Note right of Cargo: cargo tauri build --release
+    Note right of Cargo: cargo tauri build
 
     Note over Cargo: Wind is nested into Sky
     Note over Cargo: Sky is nested into Mountain
@@ -122,4 +123,4 @@ sequenceDiagram
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this integration.
+See [CHANGELOG.md](CHANGELOG.md) for a history of changes to this ecosystem.
