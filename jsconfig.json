@@ -1,8 +1,9 @@
 {
+	"$schema": "https://json.schemastore.org/jsconfig",
 	"compilerOptions": {
 		"module": "ESNext",
-		"moduleResolution": "Node",
-		"target": "ES2020",
+		"moduleResolution": "Bundler",
+		"target": "ESNext",
 		"jsx": "preserve",
 		"esversion": 6,
 		"strictNullChecks": true,
@@ -11,5 +12,6 @@
 	"exclude": ["node_modules"],
 	"jshint.options": {
 		"esversion": 6
-	}
+	},
+	"extends": "@playform/build/jsconfig"
 }
