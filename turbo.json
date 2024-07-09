@@ -3,7 +3,8 @@
 	"tasks": {
 		"Run": {
 			"cache": false,
-			"dependsOn": ["^prepublishOnly", "^Run"]
+			"dependsOn": ["^prepublishOnly", "^Run"],
+			"persistent": true
 		},
 		"prepublishOnly": {
 			"dependsOn": ["^prepublishOnly"],
