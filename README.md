@@ -39,6 +39,16 @@ Run the `EcoSystem`:
 pnpm run tauri dev
 ```
 
+## Usage
+
+First run the [`Sun`](./Target/release/Sun.exe) binary then the
+[`River`](./Target/release/River.exe) to startup the necessary websockets. Then
+run the Tauri app [`Mountain`](./Target/release/Mountain.exe)
+
+![EcoSystem](https://nikolahristov.tech/Image/GitHub/CodeEditorLand/EcoSystem/EcoSystem.svg)
+
+## Graph
+
 ```mermaid
 graph TD
     A[Top Repo: EcoSystem]
