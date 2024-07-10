@@ -27,7 +27,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "1.8.3",
 		"@commonalityco/studio": "0.2.57",
-		"@playform/build": "0.1.0",
+		"@playform/build": "0.1.1",
 		"@playform/document": "0.0.12",
 		"@playform/maintain": "0.0.8",
 		"@prettier/plugin-lua": "0.0.3",
