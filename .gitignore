@@ -1,12 +1,12 @@
 /Target/*
 
 !/Target/debug
-
 !/Target/release
+!/Target/x86_64-pc-windows-msvc
 
 /Target/debug/*
-
 /Target/release/*
+/Target/x86_64-pc-windows-msvc/*
 
 !/Target/debug/bundle
 !/Target/debug/bundle/nsis
@@ -21,3 +21,10 @@
 !/Target/release/bundle/nsis/*.exe
 !/Target/release/bundle/msi/*.msi
 !/Target/release/*.exe
+
+!/Target/x86_64-pc-windows-msvc/bundle
+!/Target/x86_64-pc-windows-msvc/bundle/nsis
+!/Target/x86_64-pc-windows-msvc/bundle/msi
+!/Target/x86_64-pc-windows-msvc/bundle/nsis/*.exe
+!/Target/x86_64-pc-windows-msvc/bundle/msi/*.msi
+!/Target/x86_64-pc-windows-msvc/*.exe
