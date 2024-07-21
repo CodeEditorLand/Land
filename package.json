@@ -56,12 +56,13 @@
 		"prettier-plugin-svelte": "3.2.6",
 		"prettier-plugin-tailwindcss": "0.6.5",
 		"prettier-plugin-toml": "2.0.1",
-		"tailwindcss": "3.4.6",
-		"turbo": "2.0.7",
-		"typescript": "5.5.3"
+		"tailwindcss": "*",
+		"turbo": "2.0.9",
+		"typescript": "5.6.0-dev.20240721"
 	},
 	"packageManager": "pnpm@9.5.0-beta.3",
 	"publishConfig": {
+		"provenance": true,
 		"access": "public"
 	}
 }
