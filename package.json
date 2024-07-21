@@ -58,7 +58,7 @@
 		"prettier-plugin-toml": "2.0.1",
 		"tailwindcss": "*",
 		"turbo": "2.0.9",
-		"typescript": "5.6.0-dev.20240721"
+		"typescript": "*"
 	},
 	"packageManager": "pnpm@9.5.0-beta.3",
 	"publishConfig": {
