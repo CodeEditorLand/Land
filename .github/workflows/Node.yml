@@ -51,6 +51,7 @@ jobs:
             STNOUPGRADE: 1
             STRIPE_CLI_TELEMETRY_OPTOUT: 1
             TELEMETRY_DISABLED: 1
+            TERRAFORM_TELEMETRY: 0
 
         strategy:
             matrix:
@@ -74,24 +75,7 @@ jobs:
                           --unsafe-perm=true
                         ]
 
-            - uses: actions/setup-node@v4.0.2
-              with:
-                  node-version: ${{ matrix.node-version }}
-                  cache: "pnpm"
-                  cache-dependency-path: ./Prototype/Interface/pnpm-lock.yaml
-
-            - run: pnpm install
-              working-directory: ./Prototype/Interface
-
-            - run: pnpm run build
-              working-directory: .
-
-            - uses: actions/upload-artifact@v4.3.3
-              with:
-                  name: .-Prototype-Interface-Node-${{ matrix.node-version }}-Target
-                  path: ./Prototype/Interface/Target
-
-            - uses: actions/setup-node@v4.0.2
+            - uses: actions/setup-node@v4.0.3
               with:
                   node-version: ${{ matrix.node-version }}
                   cache: "pnpm"
@@ -103,7 +87,7 @@ jobs:
             - run: pnpm run prepublishOnly
               working-directory: .
 
-            - uses: actions/upload-artifact@v4.3.3
+            - uses: actions/upload-artifact@v4.3.4
               with:
                   name: .-Node-${{ matrix.node-version }}-Target
                   path: ./Target

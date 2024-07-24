@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Elements" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Elements/Echo" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Elements/Mountain" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Elements/River" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Elements/Sky" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Elements/Sun" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Elements/Wind" vcs="Git" />
+  </component>
+</project>

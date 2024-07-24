@@ -1,3 +1,7 @@
-[submodule "Prototype"]
-path = Prototype
-url = ssh://git@github.com/CodeEditorLand/Prototype.git
+[submodule "Elements"]
+path = Elements
+url = ssh://git@github.com/CodeEditorLand/Elements.git
+
+[submodule "Vanilla"]
+path = Vanilla
+url = ssh://git@github.com/CodeEditorLand/Vanilla.git

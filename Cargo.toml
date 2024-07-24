@@ -1,13 +1,18 @@
 [workspace]
-members = []
+members = [
+	"Elements/Echo",
+	"Elements/Mountain",
+	"Elements/River",
+	"Elements/Sun",
+]
 resolver = "2"
 
 [workspace.package]
-authors = ["Nikola Hristov"]
-documentation = "https://Documentation.Editor.Land/"
+authors = ["🖋️ Source — 👐🏻 Open — <Source/Open@Editor.Land>"]
+documentation = "HTTPS://Documentation.Editor.Land"
 edition = "2021"
-homepage = "https://Editor.Land/"
-license-file = "LICENSE"
+homepage = "HTTPS://Editor.Land/"
+license-file = "SEE LICENSE IN LICENSE"
 publish = false
 readme = "README.md"
-repository = "https://github.com/CodeEditorLand/Moon"
+repository = "HTTPS://GitHub.Com/CodeEditorLand/EcoSystem"
