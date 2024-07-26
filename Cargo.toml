@@ -16,3 +16,6 @@ license-file = "SEE LICENSE IN LICENSE"
 publish = false
 readme = "README.md"
 repository = "HTTPS://GitHub.Com/CodeEditorLand/EcoSystem"
+
+[workspace.metadata]
+# TODO: Fill in the projects metadata (which binary is what)
