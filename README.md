@@ -22,6 +22,7 @@ Build the `EcoSystem`:
 # Build NPM packages
 pnpm run prepublishOnly
 
+
 # Build Debug releases for cargo
 cargo build
 
