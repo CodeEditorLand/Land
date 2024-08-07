@@ -10,3 +10,4 @@ codegen-units = 1
 debug = false
 lto = true
 panic = "abort"
+strip = true
