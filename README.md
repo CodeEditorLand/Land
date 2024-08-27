@@ -2,7 +2,7 @@
 
 # 🌿 [EcoSystem] —
 
-## Installation
+## 🚀 Installation
 
 Clone the repository:
 
@@ -39,7 +39,7 @@ Run the `EcoSystem`:
 pnpm run tauri dev
 ```
 
-## Usage
+## 🛠️ Usage
 
 First run the [`Sun`](./Target/release/Sun.exe) binary then the
 [`River`](./Target/release/River.exe) to startup the necessary websockets. Then
