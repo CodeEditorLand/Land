@@ -40,7 +40,7 @@
 		"@tauri-apps/cli": "2.0.0-rc.7",
 		"@tauri-apps/plugin-shell": "2.0.0-rc.0",
 		"@trivago/prettier-plugin-sort-imports": "4.3.0",
-		"@turbo/codemod": "2.0.14",
+		"@turbo/codemod": "2.1.0",
 		"commonality": "0.2.63",
 		"prettier": "3.3.3",
 		"prettier-plugin-astro": "0.14.1",
