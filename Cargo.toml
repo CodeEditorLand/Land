@@ -1,9 +1,9 @@
 [workspace]
 members = [
 	"Elements/Echo",
-	# "Elements/Mountain",
-	# "Elements/River",
-	# "Elements/Sun",
+	"Elements/Mountain",
+	"Elements/River",
+	"Elements/Sun",
 ]
 resolver = "2"
 exclude = ["Vanilla/Microsoft/VSCode/cli"]
