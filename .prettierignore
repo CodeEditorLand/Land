@@ -16,3 +16,7 @@ package-lock.json
 pnpm-lock.yaml
 yarn-debug.log*
 yarn-error.log*
+
+Target
+Documentation
+vendor
