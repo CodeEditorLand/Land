@@ -17,6 +17,10 @@ pnpm-lock.yaml
 yarn-debug.log*
 yarn-error.log*
 
-Target
 Documentation
+Target
+WordPress
+docs
+test
+test_data
 vendor
