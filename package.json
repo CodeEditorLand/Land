@@ -22,8 +22,8 @@
 		"Run": "turbo run Run",
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
 		"prepublishOnly": "turbo run prepublishOnly",
-		"tauri": "cross-env NODE_ENV=production dotenv -- tauri",
-		"turbo": "cross-env NODE_ENV=production dotenv -- turbo"
+		"tauri": "tauri",
+		"turbo": "turbo"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.8.3",
