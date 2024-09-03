@@ -22,8 +22,8 @@
 		"Run": "turbo run Run",
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
 		"prepublishOnly": "turbo run prepublishOnly",
-		"tauri": "tauri",
-		"turbo": "turbo"
+		"tauri": "cross-env NODE_ENV=production dotenv -- tauri",
+		"turbo": "cross-env NODE_ENV=production dotenv -- turbo"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.8.3",
@@ -41,8 +41,11 @@
 		"@tauri-apps/plugin-shell": "2.0.0-rc.1",
 		"@trivago/prettier-plugin-sort-imports": "4.3.0",
 		"@turbo/codemod": "2.1.1",
-		"@vue/compiler-sfc": "3.4.38",
+		"@vue/compiler-sfc": "3.5.0",
 		"commonality": "0.2.63",
+		"cross-env": "7.0.3",
+		"dotenv": "16.4.5",
+		"dotenv-cli": "7.4.2",
 		"prettier": "3.3.3",
 		"prettier-plugin-astro": "0.14.1",
 		"prettier-plugin-autocorrect": "0.4.1",
