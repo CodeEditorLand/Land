@@ -7,7 +7,7 @@
 		"jsx": "preserve"
 	},
 	"exclude": ["**/node_modules/**", "**/Target/**"],
-	"include": ["./Elements/"],
+	"include": ["./Elements/", "./Vanilla/"],
 	"watchOptions": {
 		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
 	},
