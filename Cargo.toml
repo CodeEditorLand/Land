@@ -6,7 +6,12 @@ members = [
 	"Elements/Sun",
 ]
 resolver = "2"
-exclude = ["Vanilla/Microsoft/VSCode/cli"]
+exclude = [
+	"Vanilla/Microsoft/VSCode/cli",
+	"Vanilla/Microsoft/VSCode/build/win32",
+	"Vanilla/CodeEditorLand/Editor/cli",
+	"Vanilla/CodeEditorLand/Editor/build/win32",
+]
 
 [workspace.package]
 authors = ["🖋️ Source — 👐🏻 Open — <Source/Open@Editor.Land>"]
