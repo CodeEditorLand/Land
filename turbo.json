@@ -10,8 +10,7 @@
 		},
 		"prepublishOnly": {
 			"dependsOn": ["^prepublishOnly"],
-			"outputs": ["**/Target/**"],
-			"passThroughEnv": ["TAURI"]
+			"outputs": ["**/Target/**"]
 		}
 	},
 	"ui": "stream"
