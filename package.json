@@ -24,7 +24,7 @@
 		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "1.8.3",
+		"@biomejs/biome": "1.9.0",
 		"@commonalityco/studio": "0.2.57",
 		"@playform/build": "0.1.6",
 		"@playform/document": "0.1.1",
