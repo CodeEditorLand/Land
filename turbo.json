@@ -1,17 +1,54 @@
 {
 	"$schema": "https://turbo.build/schema.json",
-	"envMode": "loose",
 	"extends": ["//"],
 	"tasks": {
 		"Run": {
 			"cache": false,
 			"dependsOn": ["^prepublishOnly"],
-			"persistent": true
+			"persistent": true,
+			"outputs": ["**/Target/**"]
 		},
 		"prepublishOnly": {
 			"dependsOn": ["^prepublishOnly"],
 			"outputs": ["**/Target/**"]
 		}
 	},
-	"ui": "stream"
+	"ui": "stream",
+	"globalEnv": [
+		"NODE_ENV",
+		"API_PRIVATE_KEYS_DIR",
+		"APPLE_API_ISSUER",
+		"APPLE_API_KEY",
+		"APPLE_API_KEY_PATH",
+		"APPLE_CERTIFICATE",
+		"APPLE_CERTIFICATE_PASSWORD",
+		"APPLE_DEVELOPMENT_TEAM",
+		"APPLE_ID",
+		"APPLE_PASSWORD",
+		"APPLE_PROVIDER_SHORT_NAME",
+		"APPLE_SIGNING_IDENTITY",
+		"APPLE_TEAM_ID",
+		"CI",
+		"TAURI_ANDROID_PROJECT_PATH",
+		"TAURI_BUNDLER_WIX_FIPS_COMPLIANT",
+		"TAURI_CLI_CONFIG_DEPTH",
+		"TAURI_CLI_NO_DEV_SERVER_WAIT",
+		"TAURI_CLI_PORT",
+		"TAURI_CLI_WATCHER_IGNORE_FILENAME",
+		"TAURI_ENV_ARCH",
+		"TAURI_ENV_DEBUG",
+		"TAURI_ENV_FAMILY",
+		"TAURI_ENV_PLATFORM",
+		"TAURI_ENV_PLATFORM_VERSION",
+		"TAURI_ENV_TARGET_TRIPLE",
+		"TAURI_IOS_PROJECT_PATH",
+		"TAURI_LINUX_AYATANA_APPINDICATOR",
+		"TAURI_SIGNING_PRIVATE_KEY",
+		"TAURI_SIGNING_PRIVATE_KEY_PASSWORD",
+		"TAURI_SIGNING_RPM_KEY",
+		"TAURI_SIGNING_RPM_KEY_PASSPHRASE",
+		"TAURI_SKIP_SIDECAR_SIGNATURE_CHECK",
+		"TAURI_WEBVIEW_AUTOMATION",
+		"TAURI_WINDOWS_SIGNTOOL_PATH"
+	]
 }
