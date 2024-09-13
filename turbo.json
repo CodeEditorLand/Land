@@ -3,7 +3,6 @@
 	"extends": ["//"],
 	"tasks": {
 		"Run": {
-			"dependsOn": ["^prepublishOnly"],
 			"persistent": true,
 			"outputs": ["Target/**"],
 			"outputLogs": "new-only"
@@ -16,7 +15,6 @@
 	},
 	"ui": "stream",
 	"globalEnv": [
-		"NODE_ENV",
 		"API_PRIVATE_KEYS_DIR",
 		"APPLE_API_ISSUER",
 		"APPLE_API_KEY",
@@ -30,6 +28,7 @@
 		"APPLE_SIGNING_IDENTITY",
 		"APPLE_TEAM_ID",
 		"CI",
+		"NODE_ENV",
 		"TAURI_ANDROID_PROJECT_PATH",
 		"TAURI_BUNDLER_WIX_FIPS_COMPLIANT",
 		"TAURI_CLI_CONFIG_DEPTH",
@@ -50,6 +49,7 @@
 		"TAURI_SIGNING_RPM_KEY_PASSPHRASE",
 		"TAURI_SKIP_SIDECAR_SIGNATURE_CHECK",
 		"TAURI_WEBVIEW_AUTOMATION",
-		"TAURI_WINDOWS_SIGNTOOL_PATH"
+		"TAURI_WINDOWS_SIGNTOOL_PATH",
+		"VITE_CJS_TRACE"
 	]
 }
