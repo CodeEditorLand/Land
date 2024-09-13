@@ -38,7 +38,7 @@
 		"@tauri-apps/cli": "2.0.0-rc.13",
 		"@tauri-apps/plugin-shell": "2.0.0-rc.1",
 		"@trivago/prettier-plugin-sort-imports": "4.3.0",
-		"@turbo/codemod": "2.1.1",
+		"@turbo/codemod": "2.1.2",
 		"@vue/compiler-sfc": "3.5.4",
 		"commonality": "0.2.63",
 		"cross-env": "7.0.3",
@@ -59,10 +59,10 @@
 		"prettier-plugin-tailwindcss": "0.6.6",
 		"prettier-plugin-toml": "2.0.1",
 		"tailwindcss": "3.4.11",
-		"turbo": "2.1.1",
+		"turbo": "2.1.2",
 		"typescript": "5.6.2"
 	},
-	"packageManager": "pnpm@9.9.0",
+	"packageManager": "pnpm@9.10.0",
 	"publishConfig": {
 		"access": "public",
 		"provenance": true
