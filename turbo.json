@@ -3,14 +3,15 @@
 	"extends": ["//"],
 	"tasks": {
 		"Run": {
-			"cache": false,
 			"dependsOn": ["^prepublishOnly"],
 			"persistent": true,
-			"outputs": ["**/Target/**"]
+			"outputs": ["Target/**"],
+			"outputLogs": "new-only"
 		},
 		"prepublishOnly": {
 			"dependsOn": ["^prepublishOnly"],
-			"outputs": ["**/Target/**"]
+			"outputs": ["Target/**"],
+			"outputLogs": "new-only"
 		}
 	},
 	"ui": "stream",

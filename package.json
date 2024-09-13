@@ -19,9 +19,9 @@
 	},
 	"type": "module",
 	"scripts": {
-		"Run": "turbo run Run --framework-inference=false --no-daemon",
+		"Run": "turbo run Run",
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
-		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
+		"prepublishOnly": "turbo run prepublishOnly"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "1.9.0",
