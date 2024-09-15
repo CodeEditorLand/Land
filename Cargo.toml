@@ -2,6 +2,7 @@
 members = [
 	"Elements/Echo",
 	"Elements/Mountain",
+	"Elements/Rest",
 	"Elements/River",
 	"Elements/Sun",
 ]
