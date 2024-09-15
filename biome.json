@@ -32,6 +32,10 @@
 			"quoteStyle": "double",
 			"semicolons": "always",
 			"trailingCommas": "all"
+		},
+		"jsxRuntime": "transparent",
+		"parser": {
+			"unsafeParameterDecoratorsEnabled": true
 		}
 	},
 	"json": {
@@ -82,7 +86,8 @@
 				"noUselessElse": "off",
 				"useNamingConvention": "off",
 				"useShorthandFunctionType": "off",
-				"useFilenamingConvention": "off"
+				"useFilenamingConvention": "off",
+				"useImportType": "off"
 			},
 			"suspicious": {
 				"all": true,
@@ -91,7 +96,7 @@
 		}
 	},
 	"organizeImports": {
-		"enabled": true
+		"enabled": false
 	},
 	"vcs": {
 		"clientKind": "git",
