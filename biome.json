@@ -1,9 +1,10 @@
 {
-	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"$schema": "https://raw.githubusercontent.com/biomejs/biome/main/packages/%40biomejs/biome/configuration_schema.json",
 	"files": {
 		"ignore": [
 			"**/Target/**/*",
 			"**/Documentation/**/*",
+			"**/dist/**/*",
 			"**/*.astro",
 			"package.json"
 		],
