@@ -1,15 +1,15 @@
 {
 	"compilerOptions": {
 		"emitDeclarationOnly": false,
+		"jsx": "preserve",
 		"noEmit": true,
 		"outDir": "Target",
-		"rootDir": ".",
-		"jsx": "preserve"
+		"rootDir": "."
 	},
 	"exclude": ["**/node_modules/**", "**/Target/**"],
+	"extends": "@playform/build/tsconfig",
 	"include": ["./Elements/", "./Vanilla/"],
 	"watchOptions": {
 		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
-	},
-	"extends": "@playform/build/tsconfig"
+	}
 }
