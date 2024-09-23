@@ -24,7 +24,7 @@
 		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "1.9.0",
+		"@biomejs/biome": "1.9.2",
 		"@commonalityco/studio": "0.2.57",
 		"@playform/build": "0.1.6",
 		"@playform/document": "0.1.1",
@@ -36,7 +36,7 @@
 		"@tailwindcss/typography": "0.5.15",
 		"@trivago/prettier-plugin-sort-imports": "4.3.0",
 		"@turbo/codemod": "2.1.2",
-		"@vue/compiler-sfc": "3.5.5",
+		"@vue/compiler-sfc": "3.5.8",
 		"commonality": "0.2.63",
 		"cross-env": "7.0.3",
 		"dotenv": "16.4.5",
@@ -55,7 +55,7 @@
 		"prettier-plugin-svelte": "3.2.6",
 		"prettier-plugin-tailwindcss": "0.6.6",
 		"prettier-plugin-toml": "2.0.1",
-		"tailwindcss": "3.4.11",
+		"tailwindcss": "3.4.13",
 		"turbo": "2.1.2",
 		"typescript": "5.6.2"
 	},
