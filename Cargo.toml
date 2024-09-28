@@ -5,6 +5,8 @@ members = [
 	"Elements/Rest",
 	"Elements/River",
 	"Elements/Sun",
+
+	"Dependency/Land/Cargo/Maintain",
 ]
 resolver = "2"
 exclude = [
@@ -19,10 +21,13 @@ authors = ["🖋️ Source — 👐🏻 Open — <Source/Open@Editor.L
 documentation = "HTTPS://Documentation.Editor.Land"
 edition = "2021"
 homepage = "HTTPS://Editor.Land/"
-license-file = "SEE LICENSE IN LICENSE"
+license-file = "LICENSE"
 publish = false
 readme = "README.md"
 repository = "https://github.com/CodeEditorLand/EcoSystem"
 
 [workspace.metadata]
 # TODO: Fill in the projects metadata (which binary is what)
+
+[workspace.dependencies]
+prun = { version = "*" }

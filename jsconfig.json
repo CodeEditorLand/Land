@@ -9,7 +9,7 @@
 	},
 	"exclude": ["**/node_modules/**", "**/Target/**"],
 	"extends": "@playform/build/jsconfig",
-	"include": ["./Elements/"],
+	"include": ["./Dependency/", "./Elements/", "./Vanilla/"],
 	"watchOptions": {
 		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
 	}
