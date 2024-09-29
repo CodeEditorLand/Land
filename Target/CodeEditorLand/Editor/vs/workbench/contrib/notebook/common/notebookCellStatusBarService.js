@@ -1,0 +1,1 @@
+import"../../../../base/common/cancellation.js";import"../../../../base/common/event.js";import"../../../../base/common/lifecycle.js";import"../../../../base/common/uri.js";import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";import"./notebookCommon.js";const C=e("notebookCellStatusBarService");export{C as INotebookCellStatusBarService};

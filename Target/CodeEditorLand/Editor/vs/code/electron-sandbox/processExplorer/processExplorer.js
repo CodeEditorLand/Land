@@ -1,0 +1,1 @@
+(function(){window.MonacoBootstrapWindow.load("vs/code/electron-sandbox/processExplorer/processExplorerMain",function(o,n){return o.startup(n)},{configureDeveloperSettings:function(){return{forceEnableDeveloperKeybindings:!0}}})})();

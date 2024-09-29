@@ -1,0 +1,1 @@
+import*as i from"../../../../base/browser/dom.js";function r(n,t,o){const e=i.getDomNodePagePosition(n);return!(t<e.left||t>e.left+e.width||o<e.top||o>e.top+e.height)}export{r as isMousePositionWithinElement};

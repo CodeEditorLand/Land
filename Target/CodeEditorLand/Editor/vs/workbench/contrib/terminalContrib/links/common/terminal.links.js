@@ -1,0 +1,1 @@
+var n=(e=>(e.OpenDetectedLink="workbench.action.terminal.openDetectedLink",e.OpenWordLink="workbench.action.terminal.openWordLink",e.OpenFileLink="workbench.action.terminal.openFileLink",e.OpenWebLink="workbench.action.terminal.openUrlLink",e))(n||{});export{n as TerminalLinksCommandId};

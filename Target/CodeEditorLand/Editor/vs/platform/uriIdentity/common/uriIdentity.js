@@ -1,0 +1,1 @@
+import"../../../base/common/uri.js";import{createDecorator as r}from"../../instantiation/common/instantiation.js";import"../../../base/common/resources.js";const I=r("IUriIdentityService");export{I as IUriIdentityService};

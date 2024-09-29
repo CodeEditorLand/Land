@@ -1,0 +1,1 @@
+import"../../extensions/common/extensions.js";import{createDecorator as e}from"../../instantiation/common/instantiation.js";const t=e("IRemoteExtensionsScannerService"),i="remoteExtensionsScanner";export{t as IRemoteExtensionsScannerService,i as RemoteExtensionsScannerChannelName};

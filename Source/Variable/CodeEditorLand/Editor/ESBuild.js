@@ -25,23 +25,24 @@ export default {
     ignoreAnnotations: !On,
     keepNames: On,
     plugins: [
-        {
-            name: "Target",
-            setup({ onStart, initialOptions: { outdir } }) {
-                onStart(async () => {
-                    try {
-                        outdir
-                            ? await (await import("fs/promises")).rm(outdir, {
-                                recursive: true,
-                            })
-                            : {};
-                    }
-                    catch (_Error) {
-                        console.log(_Error);
-                    }
-                });
-            },
-        },
+        // {
+        // 	name: "Target",
+        // 	setup({ onStart, initialOptions: { outdir } }) {
+        // 		onStart(async () => {
+        // 			try {
+        // 				outdir
+        // 					? await (
+        // 							await import("fs/promises")
+        // 						).rm(outdir, {
+        // 							recursive: true,
+        // 						})
+        // 					: {};
+        // 			} catch (_Error) {
+        // 				console.log(_Error);
+        // 			}
+        // 		});
+        // 	},
+        // },
         {
             name: "Exclude",
             setup({ onLoad }) {

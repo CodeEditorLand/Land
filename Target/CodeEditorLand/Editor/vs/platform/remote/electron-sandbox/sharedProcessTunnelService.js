@@ -1,0 +1,1 @@
+import{registerSharedProcessRemoteService as e}from"../../ipc/electron-sandbox/services.js";import{ISharedProcessTunnelService as r,ipcSharedProcessTunnelChannelName as o}from"../common/sharedProcessTunnelService.js";e(r,o);

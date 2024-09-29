@@ -1,5 +1,7 @@
 /Target/*
 
+!/Target/CodeEditorLand
+
 !/Target/debug
 !/Target/release
 !/Target/x86_64-pc-windows-msvc

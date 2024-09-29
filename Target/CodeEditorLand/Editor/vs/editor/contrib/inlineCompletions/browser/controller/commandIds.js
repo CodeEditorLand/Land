@@ -1,0 +1,1 @@
+const i="editor.action.inlineSuggest.commit",o="editor.action.inlineSuggest.showPrevious",t="editor.action.inlineSuggest.showNext";export{i as inlineSuggestCommitId,t as showNextInlineSuggestionActionId,o as showPreviousInlineSuggestionActionId};

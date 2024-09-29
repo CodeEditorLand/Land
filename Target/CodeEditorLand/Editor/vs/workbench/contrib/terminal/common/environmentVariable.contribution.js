@@ -1,0 +1,1 @@
+import{EnvironmentVariableService as e}from"./environmentVariableService.js";import{InstantiationType as r,registerSingleton as i}from"../../../../platform/instantiation/common/extensions.js";import{IEnvironmentVariableService as n}from"./environmentVariable.js";i(n,e,r.Delayed);
