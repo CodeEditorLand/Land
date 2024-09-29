@@ -19,7 +19,9 @@
 	},
 	"type": "module",
 	"scripts": {
+		"Build": "Build 'Dependency/CodeEditorLand/Editor/Source/**/*.{css,map,fish,html,js,json,jsx,md,mp3,png,ps1,psm1,scm,scpt,sh,svg,ts,tsx,ttf,zsh}' --ESBuild Source/Variable/CodeEditorLand/Editor/ESBuild.ts --TypeScript Source/Notation/CodeEditorLand/Editor/tsconfig.no-types.json",
 		"Run": "turbo run Run --framework-inference=false --no-daemon",
+		"Watch": "Build 'Dependency/CodeEditorLand/Editor/Source/**/*.{css,map,fish,html,js,json,jsx,md,mp3,png,ps1,psm1,scm,scpt,sh,svg,ts,tsx,ttf,zsh}' --ESBuild Source/Variable/CodeEditorLand/Editor/ESBuild.ts --TypeScript Source/Notation/CodeEditorLand/Editor/tsconfig.no-types.json --Watch",
 		"codemod": "node ./node_modules/@turbo/codemod/dist/cli.js",
 		"prepublishOnly": "turbo run prepublishOnly --framework-inference=false --no-daemon"
 	},
@@ -40,8 +42,7 @@
 		"@vue/compiler-sfc": "3.5.9",
 		"commonality": "0.2.63",
 		"cross-env": "7.0.3",
-		"dotenv": "16.4.5",
-		"dotenv-cli": "7.4.2",
+		"deepmerge-ts": "7.1.0",
 		"prettier": "3.3.3",
 		"prettier-plugin-astro": "0.14.1",
 		"prettier-plugin-autocorrect": "0.4.1",

@@ -15,7 +15,7 @@ export default {
 	semi: true,
 	singleQuote: false,
 	tabWidth: 4,
-	trailingComma: "es5",
+	trailingComma: "all",
 	useTabs: true,
 	vueIndentScriptAndStyle: true,
 	plugins: [
@@ -27,6 +27,7 @@ export default {
 		"prettier-plugin-tailwindcss",
 		"prettier-plugin-toml",
 	],
+	tailwindConfig: "./tailwind.config.js",
 	overrides: [
 		{
 			files: "*.astro",

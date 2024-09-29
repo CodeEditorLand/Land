@@ -6,4 +6,3 @@ packages:
     - "Dependency/SWC/NPM/**"
     - "Dependency/Tauri/NPM/**"
     - "Elements/**/*"
-    - "Vanilla"

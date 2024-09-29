@@ -10,10 +10,8 @@ members = [
 ]
 resolver = "2"
 exclude = [
-	"Vanilla/Microsoft/VSCode/cli",
-	"Vanilla/Microsoft/VSCode/build/win32",
-	"Vanilla/CodeEditorLand/Editor/cli",
-	"Vanilla/CodeEditorLand/Editor/build/win32",
+	"Dependency/Land/Dependency/Editor/cli",
+	"Dependency/Land/Dependency/Editor/build/win32",
 ]
 
 [workspace.package]
