@@ -1,0 +1,1 @@
+import*as s from"../../../base/common/assert.js";import*as a from"../../../base/common/types.js";class e{data=new Map;add(t,i){s.ok(a.isString(t)),s.ok(a.isObject(i)),s.ok(!this.data.has(t),"There is already an extension with this id"),this.data.set(t,i)}knows(t){return this.data.has(t)}as(t){return this.data.get(t)||null}}const n=new e;export{n as Registry};

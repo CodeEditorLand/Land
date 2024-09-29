@@ -1,0 +1,1 @@
+class i{_serviceBrand;_dragOperations=new Map;removeDragOperationTransfer(e){if(e&&this._dragOperations.has(e)){const r=this._dragOperations.get(e);return this._dragOperations.delete(e),r}}addDragOperationTransfer(e,r){this._dragOperations.set(e,r)}}class d{constructor(e){this.identifier=e}}export{d as DraggedTreeItemsIdentifier,i as TreeViewsDnDService};
