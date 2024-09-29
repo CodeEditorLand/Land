@@ -1,1 +1,0 @@
-import{createDecorator as e}from"../../instantiation/common/instantiation.js";import"./remoteAgentConnection.js";const o=e("sharedProcessTunnelService"),t="sharedProcessTunnel";export{o as ISharedProcessTunnelService,t as ipcSharedProcessTunnelChannelName};

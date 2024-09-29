@@ -1,1 +1,0 @@
-(function(){window.MonacoBootstrapWindow.load("vs/workbench/contrib/issue/electron-sandbox/issueReporterMain",function(o,n){return o.startup(n)},{configureDeveloperSettings:function(){return{forceEnableDeveloperKeybindings:!0,disallowReloadKeybinding:!0}}})})();

@@ -1,1 +1,0 @@
-import{InvalidTestItemError as r}from"../../contrib/testing/common/testItemCollection.js";import"vscode";const o=new WeakMap,p=(t,e)=>{const s={controllerId:e};return o.set(t,s),s},v=t=>{const e=o.get(t);if(!e)throw new r(t?.id||"<unknown>");return e};export{p as createPrivateApiFor,v as getPrivateApiFor};

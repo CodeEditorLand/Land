@@ -1,1 +1,0 @@
-import"../../../notebookBrowser.js";import{CellContentPart as r}from"../../cellPart.js";class C extends r{get activeCell(){return this.currentCell}constructor(e,l){super()}didRenderCell(e){super.didRenderCell(e)}unrenderCell(e){super.unrenderCell(e)}updateInternalLayoutNow(e){}dispose(){super.dispose()}}export{C as CellChatPart};

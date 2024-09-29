@@ -1,1 +1,0 @@
-import"./position.js";import{Range as t}from"./range.js";class g{static insert(e,r){return{range:new t(e.lineNumber,e.column,e.lineNumber,e.column),text:r,forceMoveMarkers:!0}}static delete(e){return{range:e,text:null}}static replace(e,r){return{range:e,text:r}}static replaceMove(e,r){return{range:e,text:r,forceMoveMarkers:!0}}}export{g as EditOperation};
