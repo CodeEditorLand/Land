@@ -1,3 +1,0 @@
-@mixin Input() {
-	@apply ease-Ease focus:ring-5 block max-w-4xl select-none resize-none rounded-xl border-none bg-white px-4 py-3 font-medium placeholder-slate-500 outline outline-1 outline-offset-0 outline-slate-400 transition-all duration-150 hover:outline-orange-400 focus:shadow-xl focus:shadow-blue-500/50 focus:outline-1 focus:outline-offset-0 focus:outline-blue-600 focus:ring-blue-500 sm:max-w-xs dark:bg-black dark:placeholder-slate-500 dark:outline-slate-700 dark:hover:outline-blue-500;
-}
