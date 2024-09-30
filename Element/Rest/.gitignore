@@ -1,0 +1,9 @@
+/Target/*
+
+!/Target/release
+/Target/release/*
+
+!/Target/release/*.deb
+!/Target/release/*.exe
+!/Target/release/BinaryRest
+!/Target/release/Rest

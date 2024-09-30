@@ -1,0 +1,5 @@
+@import "../Mixin/Anchor.scss";
+
+.Anchor {
+	@include Anchor();
+}

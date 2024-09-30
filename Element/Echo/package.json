@@ -1,0 +1,41 @@
+{
+	"name": "@codeeditorland/echo",
+	"version": "0.0.1",
+	"private": false,
+	"description": "📣 Echo —",
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Echo#readme",
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/Echo/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/CodeEditorLand/Echo.git"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"email": "Source/Open@Editor.Land",
+		"url": "HTTPS://Editor.Land"
+	},
+	"type": "module",
+	"main": "./Target/Variable/Worker.js",
+	"types": "./Target/Variable/Worker.d.ts",
+	"scripts": {
+		"Run": "Build 'Ts/**/*.ts' --Watch",
+		"prepublishOnly": "Build 'Ts/**/*.ts'"
+	},
+	"dependencies": {
+		"@codeeditorland/common": "0.0.6"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "4.20240925.0",
+		"@playform/build": "0.1.7",
+		"@types/dotenv": "8.2.0",
+		"miniflare": "3.20240925.0",
+		"wrangler": "3.78.12"
+	},
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
+	}
+}

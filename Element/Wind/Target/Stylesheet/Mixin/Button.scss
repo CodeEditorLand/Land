@@ -1,0 +1,25 @@
+@import "./Status.scss";
+
+@mixin Button() {
+	@apply ease-Ease focus:ring-5 hover:ring-5 inline-block w-full max-w-fit select-none rounded-2xl border-none bg-black px-6 py-3 text-center font-medium tracking-wide text-white outline outline-1 outline-offset-0 outline-white transition-all duration-150 hover:shadow-xl hover:shadow-blue-500/50 hover:outline-blue-600 hover:ring-blue-500 focus:shadow-xl focus:shadow-blue-500/50 focus:outline-1 focus:outline-offset-0 focus:outline-blue-600 focus:ring-blue-500 sm:h-auto sm:w-auto dark:bg-white dark:text-black dark:outline-neutral-700;
+
+	&.Small {
+		@apply px-4 py-1 text-base;
+
+		.Icon {
+			@apply my-2 h-5;
+		}
+	}
+
+	&.Status {
+		@include Status();
+	}
+
+	.Icon {
+		@apply inline-block h-6 align-top;
+	}
+
+	span {
+		@apply align-top;
+	}
+}

@@ -1,0 +1,37 @@
+html {
+	-webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+	@apply h-full w-full bg-transparent;
+}
+
+body {
+	@apply flex flex-grow flex-col tabular-nums text-black antialiased sm:subpixel-antialiased;
+
+	font-variant-ligatures: no-common-ligatures;
+}
+
+*::selection,
+::selection {
+	text-shadow: none;
+
+	@apply bg-amber-400 text-black;
+}
+
+img {
+	@apply inline-block select-none align-top outline-none;
+}
+
+@media (min-width: 768px) {
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		line-height: 0.7777777777777778 !important;
+		padding: 4px 0 !important;
+	}
+}

@@ -1,0 +1,37 @@
+name = "Echo"
+main = "./Target/Index.js"
+account_id = ""
+compatibility_date = "2023-05-18"
+compatibility_flags = ["nodejs_compat"]
+keep_vars = true
+route = { pattern = "echo.editor.land", custom_domain = true, zone_name = "editor.land" }
+send_metrics = false
+tsconfig = "./tsconfig.json"
+workers_dev = false
+
+[build]
+command = "npm run prepublishOnly"
+cwd = "."
+watch_dir = "./Source"
+
+[dev]
+ip = "127.0.0.1"
+port = 4000
+
+[placement]
+mode = "smart"
+
+[[kv_namespaces]]
+binding = "HTML"
+id = ""
+preview_id = ""
+
+[[kv_namespaces]]
+binding = "CSS"
+id = ""
+preview_id = ""
+
+[[kv_namespaces]]
+binding = "TypeScript"
+id = ""
+preview_id = ""

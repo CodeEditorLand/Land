@@ -1,0 +1,144 @@
+@import "../Mixin/Input.scss";
+@import "../Mixin/Anchor.scss";
+
+.Editor {
+	@include Input();
+
+	@apply relative block w-full overflow-hidden rounded-2xl p-0 font-normal outline-4 outline-white hover:shadow-xl hover:shadow-orange-500/50 sm:max-w-full dark:outline-black dark:hover:shadow-blue-500/50;
+
+	.Help {
+		@apply ease-Ease relative z-10 flex border-b border-b-slate-300 bg-black/5 px-6 py-4 text-center leading-8 transition-all duration-150 dark:border-b-black dark:bg-white/5 dark:text-white;
+
+		.Tip {
+			@apply inline-block;
+		}
+
+		kbd {
+			@apply cursor-pointer select-none;
+
+			&:hover {
+				span {
+					animation-direction: alternate-reverse;
+				}
+			}
+		}
+
+		span {
+			@apply select-auto text-amber-600;
+		}
+
+		+ .Monaco {
+			@apply h-80;
+		}
+	}
+
+	.Monaco {
+		@apply block h-96 w-full overflow-hidden rounded-2xl;
+	}
+
+	.Error {
+		@apply ease-Ease absolute left-0 top-0 z-30 w-full cursor-pointer bg-stone-50 px-4 py-3 text-base font-normal leading-10 text-black transition-all duration-150 hover:bg-stone-100 dark:bg-red-700 dark:text-white hover:dark:bg-black/95 hover:dark:text-blue-300;
+
+		span {
+			@apply align-middle;
+		}
+	}
+
+	.monaco-editor {
+		@apply font-sans;
+
+		--vscode-menu-background: theme("colors.white");
+		--vscode-editorGutter-background: theme("colors.white");
+		--vscode-editor-background: theme("colors.white");
+		--vscode-quickInput-background: theme("colors.white");
+
+		@media (prefers-color-scheme: dark) {
+			--vscode-menu-background: theme("colors.black");
+			--vscode-editorGutter-background: theme("colors.black");
+			--vscode-editor-background: theme("colors.black");
+			--vscode-quickInput-background: theme("colors.black");
+		}
+
+		.view-overlays .current-line {
+			@apply rounded-sm;
+		}
+
+		.monaco-scrollable-element > .scrollbar > .slider {
+			--vscode-scrollbarSlider-background: rgba(0, 0, 0, 0.3);
+			--vscode-scrollbarSlider-hoverBackground: black;
+
+			transform: scale3d(1, 0.8, 1) !important;
+
+			@apply cursor-grab rounded-sm;
+
+			@media (prefers-color-scheme: dark) {
+				--vscode-scrollbarSlider-background: rgba(255, 255, 255, 0.3);
+				--vscode-scrollbarSlider-hoverBackground: theme("colors.white");
+			}
+		}
+
+		.monaco-scrollable-element > .scrollbar {
+			width: 16px !important;
+			@apply ease-Ease transition-opacity;
+		}
+
+		.quick-input-widget {
+			@apply ease-Ease rounded-t-none hover:shadow-xl hover:shadow-orange-500/50 dark:hover:shadow-blue-500/50;
+
+			box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),
+				var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow) !important;
+
+			border-top: none !important;
+
+			--vscode-widget-border: theme("colors.stone.200");
+
+			@media (prefers-color-scheme: dark) {
+				--vscode-widget-border: theme("colors.slate.900");
+			}
+
+			&:hover {
+				--vscode-widget-border: theme("colors.orange.400");
+				@media (prefers-color-scheme: dark) {
+					--vscode-widget-border: theme("colors.blue.500");
+				}
+			}
+		}
+
+		.cursors-layer .cursor {
+			transform: scale3d(1, 0.9, 1);
+
+			@apply mx-0.5 rounded-sm bg-black;
+
+			&[style*="left: 0px"] {
+				@apply mx-0;
+			}
+
+			@media (prefers-color-scheme: dark) {
+				@apply bg-white;
+			}
+		}
+
+		.monaco-hover {
+			@apply rounded-lg px-3 py-2;
+
+			&:hover {
+				@apply border-orange-400;
+			}
+
+			@media (prefers-color-scheme: dark) {
+				@apply border-slate-900;
+
+				--vscode-editorHoverWidget-background: theme("colors.black");
+				--vscode-editorHoverWidget-foreground: theme("colors.white");
+
+				&:hover {
+					@apply border-blue-500;
+				}
+			}
+		}
+	}
+
+	.decorationsOverviewRuler {
+		@apply opacity-0;
+	}
+}

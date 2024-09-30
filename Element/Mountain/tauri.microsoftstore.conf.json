@@ -1,0 +1,10 @@
+{
+	"$schema": "https://raw.githubusercontent.com/CodeEditorLand/Tauri/Current/crates/tauri-cli/schema.json",
+	"bundle": {
+		"windows": {
+			"webviewInstallMode": {
+				"type": "offlineInstaller"
+			}
+		}
+	}
+}

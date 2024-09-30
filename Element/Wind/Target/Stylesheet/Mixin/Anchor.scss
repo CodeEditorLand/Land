@@ -1,0 +1,27 @@
+@mixin Anchor() {
+	text-underline-position: under;
+	--text-shadow-color: theme("colors.white");
+	text-shadow:
+		-1px 1px var(--text-shadow-color),
+		-1px 2px var(--text-shadow-color),
+		-2px 1px var(--text-shadow-color),
+		-2px 2px var(--text-shadow-color),
+		-3px 1px var(--text-shadow-color),
+		-3px 2px var(--text-shadow-color),
+		0 1px var(--text-shadow-color),
+		0 2px var(--text-shadow-color),
+		1px 1px var(--text-shadow-color),
+		1px 2px var(--text-shadow-color),
+		2px 1px var(--text-shadow-color),
+		2px 2px var(--text-shadow-color),
+		3px 1px var(--text-shadow-color),
+		3px 2px var(--text-shadow-color);
+
+	@apply ease-Ease dark:decoration-backgroundDark relative cursor-pointer rounded-sm underline decoration-stone-300 outline-none outline outline-offset-8 transition-all duration-150 hover:text-blue-600 hover:decoration-orange-400 focus-visible:z-10 focus-visible:decoration-transparent focus-visible:outline-4 focus-visible:outline-blue-500 hover:dark:text-neutral-200;
+
+	@media (prefers-color-scheme: dark) {
+		& {
+			--text-shadow-color: var(--background-dark);
+		}
+	}
+}

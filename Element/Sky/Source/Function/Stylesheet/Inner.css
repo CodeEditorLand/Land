@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind variants;
+
+@layer base {
+	:root {
+		--background-light: theme("colors.white");
+		--background-dark: theme("colors.neutral.950");
+	}
+}

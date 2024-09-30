@@ -1,0 +1,12 @@
+html {
+	-webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+	@apply h-full w-full bg-transparent;
+}
+
+body {
+	@apply antialiased sm:subpixel-antialiased;
+}

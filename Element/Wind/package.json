@@ -1,0 +1,52 @@
+{
+	"name": "@codeeditorland/wind",
+	"version": "0.0.1",
+	"private": false,
+	"description": "🌬️ Wind —",
+	"keywords": [
+		"typescript",
+		"solid",
+		"monaco",
+		"wind",
+		"codeeditorland",
+		"playform"
+	],
+	"homepage": "HTTPS://GitHub.Com/CodeEditorLand/Wind#readme",
+	"bugs": {
+		"url": "HTTPS://GitHub.Com/CodeEditorLand/Wind/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/CodeEditorLand/Wind.git"
+	},
+	"license": "SEE LICENSE IN LICENSE",
+	"author": {
+		"name": "🖋️ Source — 👐🏻 Open —",
+		"email": "Source/Open@Editor.Land",
+		"url": "HTTPS://Editor.Land"
+	},
+	"type": "module",
+	"scripts": {
+		"Run": "Build 'Source/**/*.{ts,tsx}' --ESBuild Source/Variable/ESBuild.ts --Watch",
+		"prepublishOnly": "Build 'Source/**/*.{ts,tsx}' --ESBuild Source/Variable/ESBuild.ts"
+	},
+	"dependencies": {
+		"@codeeditorland/common": "0.0.6",
+		"@modular-forms/solid": "0.23.0",
+		"@types/store": "2.0.5",
+		"deepmerge-ts": "7.1.0",
+		"esbuild-plugin-solid": "0.6.0",
+		"monaco-editor": "0.52.0",
+		"monaco-themes": "0.4.4",
+		"solid-devtools": "0.30.1",
+		"solid-js": "1.9.1",
+		"store": "2.0.12",
+		"tippy.js": "6.3.7",
+		"vite-plugin-node-polyfills": "0.22.0",
+		"zod": "3.23.8"
+	},
+	"devDependencies": {
+		"@playform/build": "0.1.7",
+		"esbuild-plugin-copy": "2.1.1"
+	}
+}

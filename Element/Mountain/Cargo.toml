@@ -1,0 +1,85 @@
+[[bin]]
+name = "Mountain"
+path = "Source/Library.rs"
+
+[build-dependencies]
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+toml = "0.8.19"
+tauri-build = { version = "2.0.0-rc.12", features = ["config-json5"] }
+json5 = "0.4.1"
+
+[dependencies]
+async-trait = "0.1.83"
+futures = "0.3.30"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+tokio = "1.40.0"
+tokio-tungstenite = "0.24.0"
+portpicker = "0.1.1"
+regex = "1.10.6"
+
+tauri = { version = "2.0.0-rc.15", features = ["tray-icon", "config-json5"] }
+
+tauri-plugin-authenticator = "2.0.0-rc.1"
+tauri-plugin-autostart = "2.0.0-rc.1"
+tauri-plugin-cli = "2.0.0-rc.1"
+tauri-plugin-clipboard-manager = "2.1.0-beta.7"
+tauri-plugin-devtools = "2.0.0-rc.1"
+tauri-plugin-dialog = "2.0.0-rc.7"
+tauri-plugin-fs = "2.0.0-rc.5"
+tauri-plugin-global-shortcut = "2.0.0-rc.2"
+tauri-plugin-http = "2.0.0-rc.5"
+tauri-plugin-log = "2.0.0-rc.2"
+tauri-plugin-notification = "2.0.0-rc.5"
+tauri-plugin-os = "2.0.0-rc.1"
+tauri-plugin-process = "2.0.0-rc.1"
+tauri-plugin-single-instance = "2.0.0-rc.4"
+tauri-plugin-store = "2.0.0-rc.3"
+tauri-plugin-upload = "2.0.0-rc.2"
+tauri-plugin-websocket = "2.0.0-rc.1"
+
+# TODO: Check if needed
+# tauri-plugin-shell = "2.0.0-rc.3"
+
+# TODO: (Issue Windows 11)
+# tauri-plugin-stronghold = "2.0.0-rc.1"
+# error: could not compile `libsodium-sys-stable` (lib) due to 1 previous error
+
+# tauri-plugin-deep-link = "0.1.2"
+# ^^^^^^^^^^^^^ use of undeclared crate or module `platform_impl`
+
+# tauri-plugin-sql = "2.0.0-rc.0"
+# ^^ use of undeclared type `Db`
+
+# tauri-plugin-positioner = "1.0.5"
+# error: failed to select a version for `webkit2gtk-sys`.
+
+# tauri-plugin-persisted-scope = "0.1.3"
+# error: failed to select a version for `webkit2gtk-sys`.
+
+# tauri-plugin-localhost = "0.1.0"
+# error: failed to select a version for `gtk-sys`.
+
+# tauri-plugin-window-state = "0.1.1"
+# error: failed to select a version for `webkit2gtk-sys`.
+
+Echo = { version = "0.0.1", path = "../Echo" }
+
+[lib]
+name = "Mountain"
+crate-type = ["lib", "cdylib", "staticlib"]
+path = "Source/Library.rs"
+
+[package]
+name = "Mountain"
+description = "⛰️ Mountain —"
+version = "0.0.1"
+edition = "2021"
+autobenches = false
+autobins = false
+autoexamples = false
+autotests = false
+publish = false
+default-run = "Mountain"
+license = "MIT"

@@ -1,0 +1,62 @@
+[build-dependencies]
+serde = { version = "1.0.210", features = ["derive"] }
+toml = "0.8.19"
+
+[dependencies]
+async-trait = "0.1.83"
+config = "0.14.0"
+dashmap = "6.1.0"
+env_logger = "0.11.5"
+futures = "0.3.30"
+log = "0.4.22"
+metrics = "0.23.0"
+rand = "0.8.5"
+serde = { version = "1.0.210", features = ["derive"] }
+serde_json = "1.0.128"
+thiserror = "1.0.64"
+tokio = { version = "1.40.0", features = ["full"] }
+tokio-tungstenite = "0.24.0"
+
+# Development
+tokio-console = { version = "0.1.12", optional = true }
+
+[[example]]
+name = "Sequence"
+path = "Example/Sequence.rs"
+
+[[example]]
+name = "WorkSteal"
+path = "Example/WorkSteal.rs"
+
+[[example]]
+name = "Tauri"
+path = "Example/Tauri.rs"
+
+[lib]
+crate-type = ["rlib"]
+name = "Echo"
+path = "Source/Library.rs"
+
+[package]
+autobenches = false
+autobins = false
+autoexamples = false
+autotests = false
+description = "📣 Echo —"
+license = "MIT"
+name = "Echo"
+repository = "https://github.com/CodeEditorLand/Echo"
+version = "0.0.1"
+edition = "2021"
+publish = false
+include = [
+	"Source/**/*",
+	"LICENSE",
+	"README.md",
+	"CHANGELOG.md",
+	"build.rs",
+	"Cargo.toml",
+]
+
+[features]
+Development = ["tokio-console"]

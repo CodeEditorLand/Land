@@ -1,0 +1,121 @@
+{
+	"$schema": "https://raw.githubusercontent.com/CodeEditorLand/Tauri/Current/crates/tauri-cli/schema.json",
+	"app": {
+		"enableGTKAppId": true,
+		"macOSPrivateApi": false,
+		"security": {
+			"assetProtocol": {
+				"enable": false,
+				"scope": []
+			},
+			"capabilities": [],
+			"csp": null,
+			"dangerousDisableAssetCspModification": false,
+			"devCsp": null,
+			"freezePrototype": false,
+			"pattern": {
+				"use": "brownfield"
+			}
+		},
+		"trayIcon": {
+			"iconAsTemplate": false,
+			"iconPath": "Source/Icon/icon.png",
+			"id": "Tray",
+			"menuOnLeftClick": true,
+			"title": "Editor",
+			"tooltip": "Open"
+		},
+		"windows": [],
+		"withGlobalTauri": false
+	},
+	"build": {
+		"beforeBuildCommand": "pnpm run prepublishOnly --filter=@codeeditorland/sky",
+		"beforeBundleCommand": "",
+		"beforeDevCommand": "pnpm run Run --filter=@codeeditorland/sky --filter=@codeeditorland/wind",
+		"devUrl": "http://localhost:9999",
+		"features": [],
+		"frontendDist": "../Sky/Target",
+		"runner": "cargo"
+	},
+	"bundle": {
+		"active": true,
+		"android": {
+			"minSdkVersion": 24
+		},
+		"category": "DeveloperTool",
+		"copyright": "PlayForm",
+		"createUpdaterArtifacts": false,
+		"externalBin": [],
+		"fileAssociations": [],
+		"homepage": "HTTPS://Editor.Land",
+		"iOS": {
+			"developmentTeam": "Land",
+			"frameworks": [],
+			"minimumSystemVersion": "13.0",
+			"template": ""
+		},
+		"icon": [
+			"Source/Icon/32x32.png",
+			"Source/Icon/128x128.png",
+			"Source/Icon/128x128@2x.png",
+			"Source/Icon/icon.icns",
+			"Source/Icon/icon.ico"
+		],
+		"license": "MIT",
+		"licenseFile": "LICENSE",
+		"linux": {
+			"appimage": {
+				"bundleMediaFramework": false,
+				"files": {}
+			},
+			"deb": {
+				"files": {}
+			},
+			"rpm": {
+				"epoch": 0,
+				"files": {},
+				"release": "1"
+			}
+		},
+		"longDescription": "",
+		"macOS": {
+			"dmg": {
+				"appPosition": {
+					"x": 0,
+					"y": 0
+				},
+				"applicationFolderPosition": {
+					"x": 0,
+					"y": 0
+				},
+				"windowSize": {
+					"height": 600,
+					"width": 800
+				}
+			},
+			"entitlements": "./Entitlements.plist",
+			"files": {},
+			"hardenedRuntime": true,
+			"minimumSystemVersion": "10.0"
+		},
+		"publisher": "Land",
+		"resources": null,
+		"shortDescription": "",
+		"targets": "all",
+		"windows": {
+			"allowDowngrades": false,
+			"certificateThumbprint": null,
+			"digestAlgorithm": null,
+			"signCommand": null,
+			"timestampUrl": null,
+			"tsp": false,
+			"webviewInstallMode": {
+				"silent": false,
+				"type": "embedBootstrapper"
+			}
+		}
+	},
+	"identifier": "land.editor.binary",
+	"productName": "Mountain",
+	"version": "0.0.1"
+}

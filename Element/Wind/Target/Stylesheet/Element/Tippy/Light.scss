@@ -1,0 +1,41 @@
+@import "tippy.js/themes/light-border.css";
+
+.tippy-box[data-theme~="light-border"] {
+	color: #000;
+	@apply border-stone-300;
+}
+
+.tippy-box[data-theme~="light-border"][data-placement^="top"]
+	> .tippy-arrow:after {
+	@apply border-t-stone-300;
+}
+
+.tippy-box[data-theme~="light-border"][data-placement^="bottom"]
+	> .tippy-arrow:before {
+	@apply border-b-stone-300;
+}
+
+.tippy-box[data-theme~="light-border"][data-placement^="bottom"]
+	> .tippy-arrow:after {
+	@apply border-b-stone-300;
+}
+
+.tippy-box[data-theme~="light-border"][data-placement^="left"]
+	> .tippy-arrow:before {
+	@apply border-l-stone-300;
+}
+
+.tippy-box[data-theme~="light-border"][data-placement^="left"]
+	> .tippy-arrow:after {
+	@apply border-l-stone-300;
+}
+
+.tippy-box[data-theme~="light-border"][data-placement^="right"]
+	> .tippy-arrow:before {
+	@apply border-r-stone-300;
+}
+
+.tippy-box[data-theme~="light-border"][data-placement^="right"]
+	> .tippy-arrow:after {
+	@apply border-r-stone-300;
+}

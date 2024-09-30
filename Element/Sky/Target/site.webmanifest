@@ -1,0 +1,10 @@
+{
+	"background_color": "#ffffff",
+	"categories": [],
+	"display": "minimal-ui",
+	"name": "Land",
+	"orientation": "landscape",
+	"short_name": "land",
+	"start_url": "/",
+	"theme_color": "#ffffff"
+}
