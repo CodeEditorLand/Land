@@ -1,10 +1,10 @@
 [workspace]
 members = [
-	"Elements/Echo",
-	"Elements/Mountain",
-	# "Elements/Rest",
-	"Elements/River",
-	"Elements/Sun",
+	"Element/Echo",
+	"Element/Mountain",
+	# "Element/Rest",
+	"Element/River",
+	"Element/Sun",
 
 	"Dependency/Land/Cargo/Maintain",
 ]

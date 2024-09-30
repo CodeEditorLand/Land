@@ -3,7 +3,7 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
-        <option name="externalProjectPath" value="$PROJECT_DIR$/Elements/Mountain/gen/android" />
+        <option name="externalProjectPath" value="$PROJECT_DIR$/Element/Mountain/gen/android" />
         <option name="gradleJvm" value="#JAVA_HOME" />
         <option name="resolveExternalAnnotations" value="false" />
       </GradleProjectSettings>

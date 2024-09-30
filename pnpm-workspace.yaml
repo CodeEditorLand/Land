@@ -5,4 +5,4 @@ packages:
     - "Dependency/Rolldown/NPM/**"
     - "Dependency/SWC/NPM/**"
     - "Dependency/Tauri/NPM/**"
-    - "Elements/**/*"
+    - "Element/**/*"
