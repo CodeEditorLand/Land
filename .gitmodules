@@ -2,6 +2,6 @@
 path = Dependency
 url = ssh://git@github.com/CodeEditorLand/Dependency.git
 
-[submodule "Element"]
-path = Element
-url = ssh://git@github.com/CodeEditorLand/Element.git
+[submodule "Elements"]
+path = Elements
+url = ssh://git@github.com/CodeEditorLand/Elements.git
