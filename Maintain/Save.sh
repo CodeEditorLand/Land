@@ -44,15 +44,15 @@ Dependency=(
 
 for Dependency in "${Dependency[@]}"; do
 	(
-		cd "$Current/../$Dependency" || exit
+		\cd "$Current/../$Dependency" || \exit
 
-		git add .
-		git ecommit
-		git push
-		git pull
+		\git add .
+		\git ecommit
+		\git push
+		\git pull
 
-		cd - || exit
+		\cd - || \exit
 	) &
 done
 
-wait
+\wait
