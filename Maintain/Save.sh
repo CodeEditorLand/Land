@@ -46,9 +46,14 @@ for Dependency in "${Dependency[@]}"; do
 	(
 		\cd "$Current/../$Dependency" || \exit
 
+		\pwd
+
 		\git add .
+
 		\git ecommit
+
 		\git push
+
 		\git pull
 
 		\cd - || \exit
