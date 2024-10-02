@@ -1,1 +1,0 @@
-import"../../../../base/common/event.js";import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";const o="__",r=e("IAuthenticationService"),s=e("IAuthenticationExtensionsService");export{s as IAuthenticationExtensionsService,r as IAuthenticationService,o as INTERNAL_AUTH_PROVIDER_PREFIX};

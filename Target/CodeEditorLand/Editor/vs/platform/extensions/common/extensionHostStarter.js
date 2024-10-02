@@ -1,1 +1,0 @@
-import"../../../base/common/event.js";import{createDecorator as n}from"../../instantiation/common/instantiation.js";const i=n("extensionHostStarter"),s="extensionHostStarter";export{i as IExtensionHostStarter,s as ipcExtensionHostStarterChannelName};

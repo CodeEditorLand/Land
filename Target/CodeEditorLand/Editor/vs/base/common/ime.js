@@ -1,1 +1,0 @@
-import{Emitter as e}from"./event.js";class i{_onDidChange=new e;onDidChange=this._onDidChange.event;_enabled=!0;get enabled(){return this._enabled}enable(){this._enabled=!0,this._onDidChange.fire()}disable(){this._enabled=!1,this._onDidChange.fire()}}const a=new i;export{a as IME,i as IMEImpl};

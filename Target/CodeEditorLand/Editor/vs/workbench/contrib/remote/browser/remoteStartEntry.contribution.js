@@ -1,1 +1,0 @@
-import{Registry as r}from"../../../../platform/registry/common/platform.js";import{Extensions as o}from"../../../common/contributions.js";import{LifecyclePhase as t}from"../../../services/lifecycle/common/lifecycle.js";import{RemoteStartEntry as e}from"./remoteStartEntry.js";r.as(o.Workbench).registerWorkbenchContribution(e,t.Restored);

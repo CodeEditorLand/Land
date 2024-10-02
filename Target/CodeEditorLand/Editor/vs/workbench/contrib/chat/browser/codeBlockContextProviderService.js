@@ -1,1 +1,0 @@
-import{toDisposable as r}from"../../../../base/common/lifecycle.js";import"./chat.js";class c{_providers=new Map;get providers(){return[...this._providers.values()]}registerProvider(o,e){return this._providers.set(e,o),r(()=>this._providers.delete(e))}}export{c as ChatCodeBlockContextProviderService};

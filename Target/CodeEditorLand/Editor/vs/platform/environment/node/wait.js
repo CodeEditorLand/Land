@@ -1,1 +1,0 @@
-import{writeFileSync as t}from"fs";import{tmpdir as a}from"os";import{randomPath as o}from"../../../base/common/extpath.js";function m(r){const e=o(a());try{return t(e,""),e}catch{return}}export{m as createWaitMarkerFileSync};

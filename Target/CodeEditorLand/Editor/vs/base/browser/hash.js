@@ -1,1 +1,0 @@
-import{VSBuffer as o}from"../common/buffer.js";import{StringSHA1 as s,toHexString as n}from"../common/hash.js";async function u(e){if(globalThis?.crypto?.subtle){const t=o.fromString(e,{dontUseNodeBuffer:!0}).buffer,r=await globalThis.crypto.subtle.digest({name:"sha-1"},t);return n(r)}else{const t=new s;return t.update(e),t.digest()}}export{u as sha1Hex};

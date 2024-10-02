@@ -1,1 +1,0 @@
-import{EditorContributionInstantiation as t,registerEditorContribution as i}from"../../../browser/editorExtensions.js";import{HoverParticipantRegistry as o}from"../../hover/browser/hoverTypes.js";import{InlayHintsController as r}from"./inlayHintsController.js";import{InlayHintsHover as n}from"./inlayHintsHover.js";i(r.ID,r,t.AfterFirstRender),o.register(n);
