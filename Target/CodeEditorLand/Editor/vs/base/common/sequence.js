@@ -1,0 +1,1 @@
+import{Emitter as i}from"./event.js";class c{elements=[];_onDidSplice=new i;onDidSplice=this._onDidSplice.event;splice(e,n,l=[]){this.elements.splice(e,n,...l),this._onDidSplice.fire({start:e,deleteCount:n,toInsert:l})}}export{c as Sequence};

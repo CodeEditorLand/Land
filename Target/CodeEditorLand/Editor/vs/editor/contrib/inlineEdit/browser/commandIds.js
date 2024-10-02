@@ -1,0 +1,1 @@
+const i="editor.action.inlineEdit.accept",t="editor.action.inlineEdit.trigger",n="editor.action.inlineEdit.reject",e="editor.action.inlineEdit.jumpTo",o="editor.action.inlineEdit.jumpBack";export{i as inlineEditAcceptId,o as inlineEditJumpBackId,e as inlineEditJumpToId,n as inlineEditRejectId,t as inlineEditTriggerId};

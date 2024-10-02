@@ -1,0 +1,1 @@
+function f(t,n){let r=0;for(let e=0;e<t.length;e++)t.charAt(e)==="	"?r+=n:r++;return r}function u(t,n,r){t=t<0?0:t;let e="";if(!r){const o=Math.floor(t/n);t=t%n;for(let l=0;l<o;l++)e+="	"}for(let o=0;o<t;o++)e+=" ";return e}export{u as generateIndent,f as getSpaceCnt};

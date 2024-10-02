@@ -1,0 +1,1 @@
+import{LegacyLinesDiffComputer as e}from"./legacyLinesDiffComputer.js";import{DefaultLinesDiffComputer as f}from"./defaultLinesDiffComputer/defaultLinesDiffComputer.js";import"./linesDiffComputer.js";const m={getLegacy:()=>new e,getDefault:()=>new f};export{m as linesDiffComputers};

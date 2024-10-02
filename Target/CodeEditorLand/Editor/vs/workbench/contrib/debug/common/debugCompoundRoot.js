@@ -1,0 +1,1 @@
+import{Emitter as t}from"../../../../base/common/event.js";class i{stopped=!1;stopEmitter=new t;onDidSessionStop=this.stopEmitter.event;sessionStopped(){this.stopped||(this.stopped=!0,this.stopEmitter.fire())}}export{i as DebugCompoundRoot};

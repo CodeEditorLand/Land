@@ -1,0 +1,1 @@
+class a{constructor(e){this.id=e}static enableDebugLogging=!1;_data=new Map;_idPool=1;add(e){const t=this._idPool++;return this._data.set(t,e),this.logDebugInfo(),t}get(e,t){return this._data.has(e)?this._data.get(e)[t]:void 0}delete(e){this._data.delete(e),this.logDebugInfo()}logDebugInfo(){a.enableDebugLogging}}export{a as Cache};

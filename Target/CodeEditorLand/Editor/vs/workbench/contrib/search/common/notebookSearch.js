@@ -1,0 +1,1 @@
+import{createDecorator as e}from"../../../../platform/instantiation/common/instantiation.js";import"../../../../base/common/cancellation.js";import"../../../../base/common/map.js";import"../../../services/search/common/search.js";const m=e("notebookSearchService");export{m as INotebookSearchService};

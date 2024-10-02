@@ -1,0 +1,1 @@
+(async function(){const o=window.MonacoBootstrapWindow,{result:r,configuration:e}=await o.load("vs/code/electron-sandbox/processExplorer/processExplorerMain",{configureDeveloperSettings:function(){return{forceEnableDeveloperKeybindings:!0}}});r.startup(e)})();
