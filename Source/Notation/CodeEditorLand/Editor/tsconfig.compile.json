@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"outDir": "../../../../Target/CodeEditorLand/Editor",
 		"rootDir": "../../../../Dependency/Land/Dependency/Editor/Source",
-		"baseUrl": "../Dependency/Land/Dependency/Editor/Source",
+		"baseUrl": "../../../../Dependency/Dependency/Editor/Source",
 
 		"jsx": "preserve",
 
@@ -26,7 +26,7 @@
 		"exactOptionalPropertyTypes": false,
 
 		"paths": {
-			"vs/*": ["../Dependency/Land/Dependency/Editor/Source/vs/*"]
+			"vs/*": ["../../../../Dependency/Dependency/Editor/Source/vs/*"]
 		},
 
 		"module": "ESNext",
@@ -39,11 +39,11 @@
 	"exclude": ["**/node_modules/**", "**/Target/**"],
 	"extends": "@playform/build/tsconfig",
 	"include": [
-		"../Dependency/Land/Dependency/Editor/Source/*.ts",
-		"../Dependency/Land/Dependency/Editor/Source/typings",
-		"../Dependency/Land/Dependency/Editor/Source/vs/**/*.ts",
-		"../Dependency/Land/Dependency/Editor/Source/vscode-dts/vscode.proposed.*.d.ts",
-		"../Dependency/Land/Dependency/Editor/Source/vscode-dts/vscode.d.ts"
+		"../../../../Dependency/Dependency/Editor/Source/*.ts",
+		"../../../../Dependency/Dependency/Editor/Source/typings",
+		"../../../../Dependency/Dependency/Editor/Source/vs/**/*.ts",
+		"../../../../Dependency/Dependency/Editor/Source/vscode-dts/vscode.proposed.*.d.ts",
+		"../../../../Dependency/Dependency/Editor/Source/vscode-dts/vscode.d.ts"
 	],
 	"watchOptions": {
 		"excludeDirectories": ["**/node_modules/**", "**/Target/**"]
