@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"baseUrl": "../../../../",
+		"baseUrl": "../../../../Dependency/Land/Dependency/Editor/Source",
 		"outDir": "../../../../Target/CodeEditorLand/Editor",
 		"rootDir": "../../../../Dependency/Land/Dependency/Editor/Source",
 
